@@ -1,0 +1,338 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+body {
+    background: #1a1a2e;
+    overflow: hidden;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    touch-action: none;
+}
+
+#game-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#gameCanvas {
+    border: 3px solid #e94560;
+    border-radius: 4px;
+    image-rendering: pixelated;
+    cursor: crosshair;
+}
+
+#toolbar {
+    width: 100%;
+    max-width: 960px;
+    background: #16213e;
+    border: 2px solid #0f3460;
+    border-radius: 0 0 8px 8px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+#mode-buttons {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.mode-btn {
+    padding: 8px 20px;
+    border: 2px solid #e94560;
+    background: transparent;
+    color: #e94560;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.15s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.mode-btn.active {
+    background: #e94560;
+    color: #fff;
+}
+
+.mode-btn:hover:not(.active) {
+    background: rgba(233, 69, 96, 0.2);
+}
+
+.tool-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.tool-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    border-right: 1px solid #0f3460;
+}
+
+.tool-group:last-child {
+    border-right: none;
+}
+
+.group-label {
+    color: #537895;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    margin-right: 2px;
+}
+
+.tool-btn {
+    width: 40px;
+    height: 40px;
+    border: 2px solid #0f3460;
+    background: #1a1a2e;
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+}
+
+.tool-btn:hover {
+    border-color: #e94560;
+    background: #16213e;
+}
+
+.tool-btn.selected {
+    border-color: #e94560;
+    background: #e94560;
+    box-shadow: 0 0 8px rgba(233, 69, 96, 0.5);
+}
+
+.tool-icon {
+    width: 28px;
+    height: 28px;
+    image-rendering: pixelated;
+}
+
+.action-btn {
+    padding: 6px 12px;
+    border: 1px solid #0f3460;
+    background: #1a1a2e;
+    color: #a8b8d8;
+    font-size: 11px;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.15s;
+}
+
+.action-btn:hover {
+    border-color: #537895;
+    background: #16213e;
+    color: #fff;
+}
+
+.hud-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 16px;
+}
+
+.hud-label {
+    color: #537895;
+    font-size: 10px;
+    letter-spacing: 2px;
+}
+
+.hud-value {
+    color: #fff;
+    font-size: 22px;
+    font-weight: bold;
+    font-family: monospace;
+}
+
+#overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    pointer-events: none;
+}
+
+#overlay-text {
+    color: #fff;
+    font-size: 48px;
+    font-weight: bold;
+    text-shadow: 3px 3px 0 #e94560;
+    animation: pulse 0.5s ease-in-out;
+    font-family: monospace;
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.5); opacity: 0; }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+#touch-controls {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 160px;
+    z-index: 200;
+    pointer-events: none;
+}
+
+#touch-controls.active {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 10px 15px 20px;
+}
+
+.touch-dpad {
+    display: grid;
+    grid-template-columns: 60px 60px 60px;
+    grid-template-rows: 60px 60px;
+    gap: 4px;
+    pointer-events: auto;
+}
+
+.touch-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.touch-btn:active, .touch-btn.pressed {
+    background: rgba(233, 69, 96, 0.5);
+    border-color: #e94560;
+}
+
+.touch-btn.large {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    font-size: 28px;
+}
+
+.touch-actions {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    pointer-events: auto;
+}
+
+.touch-spacer {
+    width: 60px;
+    height: 60px;
+}
+
+#touch-edit-controls {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+}
+
+#touch-edit-controls.active {
+    display: block;
+}
+
+.touch-palette {
+    display: flex;
+    overflow-x: auto;
+    gap: 6px;
+    padding: 8px 12px;
+    background: rgba(22, 33, 62, 0.95);
+    border-top: 2px solid #0f3460;
+    -webkit-overflow-scrolling: touch;
+}
+
+.touch-palette .tool-btn {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+}
+
+.touch-palette .tool-icon {
+    width: 36px;
+    height: 36px;
+}
+
+@media (max-width: 960px) {
+    #gameCanvas {
+        width: 100vw;
+        height: auto;
+    }
+
+    #toolbar {
+        padding: 6px 8px;
+        gap: 6px;
+    }
+
+    .tool-btn {
+        width: 34px;
+        height: 34px;
+    }
+
+    .group-label {
+        display: none;
+    }
+}
+
+@media (hover: none) and (pointer: coarse) {
+    #toolbar {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .tool-group {
+        flex-shrink: 0;
+    }
+
+    #gameCanvas {
+        width: 100vw;
+        height: auto;
+    }
+}

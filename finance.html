@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Финансовый аналитик</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 0;
+        }
+
+        .app {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0 20px;
+        }
+
+        .app-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            background: #1a1a2e;
+            border: 1px solid #2a2a3e;
+            color: #e0e0e0;
+            padding: 8px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            background: #2a2a3e;
+            border-color: #3a3a5e;
+        }
+
+        .btn-primary {
+            background: #2d5a27;
+            border-color: #3a7a30;
+        }
+
+        .btn-primary:hover {
+            background: #3a7a30;
+        }
+
+        .btn-danger {
+            background: #5a2727;
+            border-color: #7a3030;
+        }
+
+        .btn-danger:hover {
+            background: #7a3030;
+        }
+
+        .btn-small {
+            padding: 4px 10px;
+            font-size: 12px;
+            border-radius: 6px;
+        }
+
+        .btn-icon {
+            padding: 6px;
+            font-size: 16px;
+            line-height: 1;
+            border-radius: 8px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tables-container {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .finance-table-card {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .table-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            border-bottom: 1px solid #222;
+        }
+
+        .table-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: #fff;
+            background: none;
+            border: none;
+            outline: none;
+            font-family: inherit;
+            width: auto;
+            min-width: 100px;
+        }
+
+        .table-title:focus {
+            border-bottom: 1px solid #555;
+        }
+
+        .table-header-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .finance-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .finance-table th {
+            text-align: left;
+            padding: 10px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #888;
+            border-bottom: 1px solid #1e1e1e;
+            background: #0e0e0e;
+        }
+
+        .finance-table th:last-child {
+            text-align: right;
+        }
+
+        .finance-table td {
+            padding: 8px 14px;
+            font-size: 15px;
+            border-bottom: 1px solid #1a1a1a;
+            vertical-align: middle;
+        }
+
+        .finance-table td:last-child {
+            text-align: right;
+        }
+
+        .finance-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .finance-table .row-data td {
+            position: relative;
+        }
+
+        .finance-table .row-data:hover {
+            background: #161616;
+        }
+
+        .finance-table .row-data:hover .row-delete {
+            opacity: 1;
+        }
+
+        .row-delete {
+            position: absolute;
+            left: -2px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0;
+            background: #5a2727;
+            border: none;
+            color: #ff6b6b;
+            cursor: pointer;
+            font-size: 10px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.15s;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .cell-input {
+            background: none;
+            border: none;
+            color: #e0e0e0;
+            font-size: 15px;
+            font-family: inherit;
+            outline: none;
+            width: 100%;
+            padding: 2px 0;
+        }
+
+        .cell-input:focus {
+            border-bottom: 1px solid #444;
+        }
+
+        .cell-input.amount {
+            text-align: right;
+            color: #4fc3f7;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .cell-input.amount-green {
+            color: #66bb6a;
+        }
+
+        .summary-row td {
+            font-weight: 600;
+            border-top: 1px solid #333 !important;
+            padding-top: 12px !important;
+            padding-bottom: 12px !important;
+        }
+
+        .summary-row .summary-label {
+            color: #aaa;
+            font-size: 14px;
+        }
+
+        .summary-row .summary-value {
+            font-size: 16px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .summary-expenses .summary-value {
+            color: #ff8a65;
+        }
+
+        .summary-remainder .summary-value {
+            color: #66bb6a;
+        }
+
+        .add-row-area {
+            padding: 8px 14px;
+            border-top: 1px solid #1a1a1a;
+        }
+
+        .add-row-btn {
+            background: none;
+            border: 1px dashed #333;
+            color: #666;
+            width: 100%;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .add-row-btn:hover {
+            border-color: #555;
+            color: #999;
+            background: #161616;
+        }
+
+        .column-header-input {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 13px;
+            font-weight: 500;
+            outline: none;
+            font-family: inherit;
+            width: 100%;
+        }
+
+        .column-header-input:focus {
+            color: #bbb;
+            border-bottom: 1px solid #444;
+        }
+
+        .add-table-btn {
+            width: 100%;
+            padding: 14px;
+            background: #111;
+            border: 2px dashed #2a2a2a;
+            border-radius: 14px;
+            color: #555;
+            cursor: pointer;
+            font-size: 15px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .add-table-btn:hover {
+            border-color: #444;
+            color: #888;
+            background: #161616;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 16px;
+            padding: 24px;
+            width: 90%;
+            max-width: 400px;
+            transform: scale(0.95);
+            transition: transform 0.2s;
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        .modal h2 {
+            font-size: 18px;
+            margin-bottom: 16px;
+            color: #fff;
+        }
+
+        .modal-field {
+            margin-bottom: 14px;
+        }
+
+        .modal-field label {
+            display: block;
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 6px;
+        }
+
+        .modal-field input, .modal-field select {
+            width: 100%;
+            padding: 10px 12px;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 15px;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .modal-field input:focus, .modal-field select:focus {
+            border-color: #555;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .budget-input-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            background: #0e0e0e;
+            border-bottom: 1px solid #1e1e1e;
+        }
+
+        .budget-input-row label {
+            font-size: 14px;
+            color: #888;
+            white-space: nowrap;
+        }
+
+        .budget-input-row .cell-input {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .table-type-badge {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .badge-subscriptions {
+            background: #1a2a3a;
+            color: #4fc3f7;
+        }
+
+        .badge-budget {
+            background: #1a3a1a;
+            color: #66bb6a;
+        }
+
+        .distribution-section {
+            border-top: 1px solid #2a2a2a;
+        }
+
+        .distribution-section td {
+            padding: 6px 14px !important;
+        }
+
+        .distribution-section .cell-input {
+            font-size: 14px;
+            color: #b0bec5;
+        }
+
+        .distribution-section .cell-input.amount {
+            color: #90a4ae;
+        }
+
+        .save-indicator {
+            font-size: 12px;
+            color: #555;
+            transition: color 0.3s;
+        }
+
+        .save-indicator.saved {
+            color: #66bb6a;
+        }
+
+        @media (max-width: 480px) {
+            .app {
+                padding: 10px;
+            }
+            .finance-table td, .finance-table th {
+                padding: 8px 10px;
+                font-size: 14px;
+            }
+            .cell-input {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="app-header">
+            <h1>Финансы</h1>
+            <div class="header-actions">
+                <span class="save-indicator" id="saveIndicator">Сохранено</span>
+                <button class="btn btn-small" onclick="exportData()" title="Экспорт">&#8681;</button>
+                <button class="btn btn-small" onclick="importData()" title="Импорт">&#8679;</button>
+            </div>
+        </div>
+
+        <div class="tables-container" id="tablesContainer"></div>
+
+        <button class="add-table-btn" onclick="showNewTableModal()">+ Добавить таблицу</button>
+    </div>
+
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+        <div class="modal" id="modalContent"></div>
+    </div>
+
+    <input type="file" id="importInput" accept=".json" style="display:none" onchange="handleImport(event)">
+
+    <script>
+    const STORAGE_KEY = 'finance_app_data';
+
+    let appData = {
+        tables: []
+    };
+
+    function generateId() {
+        return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    }
+
+    function loadData() {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            try {
+                appData = JSON.parse(saved);
+            } catch(e) {
+                appData = { tables: [] };
+            }
+        }
+        if (!appData.tables.length) {
+            createDefaultData();
+        }
+    }
+
+    function saveData() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+        const indicator = document.getElementById('saveIndicator');
+        indicator.textContent = 'Сохранено';
+        indicator.classList.add('saved');
+        setTimeout(() => indicator.classList.remove('saved'), 1500);
+    }
+
+    function createDefaultData() {
+        appData.tables = [
+            {
+                id: generateId(),
+                title: 'Подписки',
+                type: 'subscriptions',
+                columns: [
+                    { id: generateId(), name: 'Подписка' },
+                    { id: generateId(), name: 'Дата списания' },
+                    { id: generateId(), name: 'Стоимость' }
+                ],
+                rows: [
+                    { id: generateId(), cells: ['iCloud', '8-е число', '350'] },
+                    { id: generateId(), cells: ['Perplexity', '20-е число', '1200'] },
+                    { id: generateId(), cells: ['Телефон', '10-е число', '264'] },
+                    { id: generateId(), cells: ['Сашин телефон', '14-е число', '800'] },
+                    { id: generateId(), cells: ['Интернет', '16-е число', '900'] }
+                ],
+                amountColumnIndex: 2
+            },
+            {
+                id: generateId(),
+                title: '22.06',
+                type: 'budget',
+                columns: [
+                    { id: generateId(), name: 'Статья' },
+                    { id: generateId(), name: 'Сумма' }
+                ],
+                budget: 60000,
+                rows: [
+                    { id: generateId(), cells: ['Кредит', '5500'] },
+                    { id: generateId(), cells: ['Коммуналка', '5000'] },
+                    { id: generateId(), cells: ['Саша', '3500'] },
+                    { id: generateId(), cells: ['Бензин', '3000'] }
+                ],
+                amountColumnIndex: 1,
+                distribution: [
+                    { id: generateId(), label: 'На жизнь', amount: '30000' },
+                    { id: generateId(), label: 'В отложенное', amount: '10000' },
+                    { id: generateId(), label: 'В резерв', amount: '2500' }
+                ]
+            }
+        ];
+        saveData();
+    }
+
+    function formatNumber(n) {
+        const num = parseFloat(n);
+        if (isNaN(num)) return '0';
+        return num.toLocaleString('ru-RU');
+    }
+
+    function parseNumber(s) {
+        if (!s) return 0;
+        const cleaned = s.toString().replace(/[^\d.-]/g, '');
+        return parseFloat(cleaned) || 0;
+    }
+
+    function calcTableTotal(table) {
+        const colIdx = table.amountColumnIndex;
+        return table.rows.reduce((sum, row) => sum + parseNumber(row.cells[colIdx]), 0);
+    }
+
+    function renderTables() {
+        const container = document.getElementById('tablesContainer');
+        container.innerHTML = '';
+        appData.tables.forEach(table => {
+            container.appendChild(renderTable(table));
+        });
+    }
+
+    function renderTable(table) {
+        const card = document.createElement('div');
+        card.className = 'finance-table-card';
+        card.dataset.tableId = table.id;
+
+        const badgeClass = table.type === 'subscriptions' ? 'badge-subscriptions' : 'badge-budget';
+        const badgeText = table.type === 'subscriptions' ? 'Подписки' : 'Бюджет';
+
+        let html = `
+            <div class="table-header">
+                <div style="display:flex;align-items:center;gap:10px">
+                    <input class="table-title" value="${escHtml(table.title)}"
+                        onchange="updateTableTitle('${table.id}', this.value)"
+                        style="color:#fff">
+                    <span class="table-type-badge ${badgeClass}">${badgeText}</span>
+                </div>
+                <div class="table-header-actions">
+                    <button class="btn btn-icon btn-small" onclick="addColumn('${table.id}')" title="Добавить столбец">+&#9783;</button>
+                    <button class="btn btn-icon btn-small btn-danger" onclick="deleteTable('${table.id}')" title="Удалить таблицу">&times;</button>
+                </div>
+            </div>`;
+
+        if (table.type === 'budget') {
+            html += `
+            <div class="budget-input-row">
+                <label>Общий бюджет:</label>
+                <input class="cell-input amount amount-green"
+                    value="${formatNumber(table.budget)}"
+                    onchange="updateBudget('${table.id}', this.value)"
+                    onfocus="this.value=this.value.replace(/[^\\d]/g,'')"
+                    onblur="this.value=formatNumber(this.value)"
+                    style="font-size:16px;font-weight:600"> &#8381;
+            </div>`;
+        }
+
+        html += `<table class="finance-table">`;
+
+        // Column headers
+        html += '<thead><tr>';
+        table.columns.forEach((col, ci) => {
+            const isLast = ci === table.columns.length - 1;
+            html += `<th style="${isLast ? 'text-align:right' : ''}">
+                <input class="column-header-input" value="${escHtml(col.name)}"
+                    onchange="updateColumnName('${table.id}','${col.id}',this.value)"
+                    style="${isLast ? 'text-align:right' : ''}">
+            </th>`;
+        });
+        html += '</tr></thead>';
+
+        // Data rows
+        html += '<tbody>';
+        table.rows.forEach(row => {
+            html += `<tr class="row-data">`;
+            row.cells.forEach((cell, ci) => {
+                const isAmount = ci === table.amountColumnIndex;
+                html += `<td>
+                    ${ci === 0 ? `<button class="row-delete" onclick="deleteRow('${table.id}','${row.id}')">&times;</button>` : ''}
+                    <input class="cell-input ${isAmount ? 'amount' : ''}"
+                        value="${isAmount ? formatNumber(cell) : escHtml(cell)}"
+                        onchange="updateCell('${table.id}','${row.id}',${ci},this.value)"
+                        ${isAmount ? `onfocus="this.value=this.value.replace(/[^\\d]/g,'')" onblur="this.value=formatNumber(this.value)"` : ''}>
+                </td>`;
+            });
+            html += '</tr>';
+        });
+
+        // Summary rows
+        const total = calcTableTotal(table);
+        const colSpan = table.columns.length - 1;
+
+        if (table.type === 'subscriptions') {
+            html += `<tr class="summary-row summary-expenses">
+                <td colspan="${colSpan}" class="summary-label">Итого в месяц</td>
+                <td class="summary-value" style="text-align:right">${formatNumber(total)} &#8381;</td>
+            </tr>`;
+        } else if (table.type === 'budget') {
+            const remainder = (table.budget || 0) - total;
+            html += `<tr class="summary-row summary-expenses">
+                <td colspan="${colSpan}" class="summary-label">Итого расходов</td>
+                <td class="summary-value" style="text-align:right">${formatNumber(total)} &#8381;</td>
+            </tr>`;
+            html += `<tr class="summary-row summary-remainder">
+                <td colspan="${colSpan}" class="summary-label">Остаток</td>
+                <td class="summary-value" style="text-align:right;color:${remainder >= 0 ? '#66bb6a' : '#ff5252'}">${formatNumber(remainder)} &#8381;</td>
+            </tr>`;
+
+            // Distribution rows
+            if (table.distribution && table.distribution.length) {
+                html += `<tr><td colspan="${table.columns.length}" style="padding:0;border-top:1px solid #2a2a2a"></td></tr>`;
+                table.distribution.forEach(d => {
+                    html += `<tr class="row-data distribution-section">
+                        <td style="position:relative">
+                            <button class="row-delete" onclick="deleteDistribution('${table.id}','${d.id}')">&times;</button>
+                            <input class="cell-input" value="${escHtml(d.label)}"
+                                onchange="updateDistribution('${table.id}','${d.id}','label',this.value)"
+                                style="color:#b0bec5;font-size:14px">
+                        </td>
+                        <td>
+                            <input class="cell-input amount" value="${formatNumber(d.amount)}"
+                                onchange="updateDistribution('${table.id}','${d.id}','amount',this.value)"
+                                onfocus="this.value=this.value.replace(/[^\\d]/g,'')"
+                                onblur="this.value=formatNumber(this.value)"
+                                style="color:#90a4ae;font-size:14px">
+                        </td>
+                    </tr>`;
+                });
+            }
+        }
+
+        html += '</tbody></table>';
+
+        html += `<div class="add-row-area">
+            <button class="add-row-btn" onclick="addRow('${table.id}')">+ Добавить строку</button>
+            ${table.type === 'budget' ? `<button class="add-row-btn" style="margin-top:4px" onclick="addDistribution('${table.id}')">+ Распределение</button>` : ''}
+        </div>`;
+
+        card.innerHTML = html;
+        return card;
+    }
+
+    function escHtml(s) {
+        const d = document.createElement('div');
+        d.textContent = s || '';
+        return d.innerHTML;
+    }
+
+    function findTable(id) {
+        return appData.tables.find(t => t.id === id);
+    }
+
+    function updateTableTitle(tableId, value) {
+        const table = findTable(tableId);
+        if (table) { table.title = value; saveData(); }
+    }
+
+    function updateColumnName(tableId, colId, value) {
+        const table = findTable(tableId);
+        if (!table) return;
+        const col = table.columns.find(c => c.id === colId);
+        if (col) { col.name = value; saveData(); }
+    }
+
+    function updateCell(tableId, rowId, cellIndex, value) {
+        const table = findTable(tableId);
+        if (!table) return;
+        const row = table.rows.find(r => r.id === rowId);
+        if (row) {
+            if (cellIndex === table.amountColumnIndex) {
+                row.cells[cellIndex] = value.replace(/[^\d.-]/g, '');
+            } else {
+                row.cells[cellIndex] = value;
+            }
+            saveData();
+            renderTables();
+        }
+    }
+
+    function updateBudget(tableId, value) {
+        const table = findTable(tableId);
+        if (!table) return;
+        table.budget = parseNumber(value);
+        saveData();
+        renderTables();
+    }
+
+    function addRow(tableId) {
+        const table = findTable(tableId);
+        if (!table) return;
+        const cells = table.columns.map(() => '');
+        table.rows.push({ id: generateId(), cells });
+        saveData();
+        renderTables();
+
+        setTimeout(() => {
+            const card = document.querySelector(`[data-table-id="${tableId}"]`);
+            const inputs = card.querySelectorAll('.row-data:not(.distribution-section) .cell-input');
+            if (inputs.length) {
+                const firstNewInput = inputs[inputs.length - table.columns.length];
+                if (firstNewInput) firstNewInput.focus();
+            }
+        }, 50);
+    }
+
+    function deleteRow(tableId, rowId) {
+        const table = findTable(tableId);
+        if (!table) return;
+        table.rows = table.rows.filter(r => r.id !== rowId);
+        saveData();
+        renderTables();
+    }
+
+    function addColumn(tableId) {
+        showModal(`
+            <h2>Добавить столбец</h2>
+            <div class="modal-field">
+                <label>Название столбца</label>
+                <input id="newColName" placeholder="Название">
+            </div>
+            <div class="modal-field">
+                <label>Это столбец с суммой?</label>
+                <select id="newColIsAmount">
+                    <option value="no">Нет</option>
+                    <option value="yes">Да (заменить текущий столбец суммы)</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn" onclick="closeModal()">Отмена</button>
+                <button class="btn btn-primary" onclick="confirmAddColumn('${tableId}')">Добавить</button>
+            </div>
+        `);
+        setTimeout(() => document.getElementById('newColName').focus(), 100);
+    }
+
+    function confirmAddColumn(tableId) {
+        const name = document.getElementById('newColName').value.trim();
+        if (!name) return;
+        const isAmount = document.getElementById('newColIsAmount').value === 'yes';
+        const table = findTable(tableId);
+        if (!table) return;
+
+        table.columns.push({ id: generateId(), name });
+        table.rows.forEach(r => r.cells.push(''));
+
+        if (isAmount) {
+            table.amountColumnIndex = table.columns.length - 1;
+        }
+
+        saveData();
+        renderTables();
+        closeModal();
+    }
+
+    function deleteTable(tableId) {
+        showModal(`
+            <h2>Удалить таблицу?</h2>
+            <p style="color:#888;margin-bottom:16px">Это действие нельзя отменить.</p>
+            <div class="modal-actions">
+                <button class="btn" onclick="closeModal()">Отмена</button>
+                <button class="btn btn-danger" onclick="confirmDeleteTable('${tableId}')">Удалить</button>
+            </div>
+        `);
+    }
+
+    function confirmDeleteTable(tableId) {
+        appData.tables = appData.tables.filter(t => t.id !== tableId);
+        saveData();
+        renderTables();
+        closeModal();
+    }
+
+    function updateDistribution(tableId, distId, field, value) {
+        const table = findTable(tableId);
+        if (!table || !table.distribution) return;
+        const d = table.distribution.find(x => x.id === distId);
+        if (d) {
+            if (field === 'amount') {
+                d[field] = value.replace(/[^\d.-]/g, '');
+            } else {
+                d[field] = value;
+            }
+            saveData();
+        }
+    }
+
+    function addDistribution(tableId) {
+        const table = findTable(tableId);
+        if (!table) return;
+        if (!table.distribution) table.distribution = [];
+        table.distribution.push({ id: generateId(), label: '', amount: '' });
+        saveData();
+        renderTables();
+    }
+
+    function deleteDistribution(tableId, distId) {
+        const table = findTable(tableId);
+        if (!table || !table.distribution) return;
+        table.distribution = table.distribution.filter(d => d.id !== distId);
+        saveData();
+        renderTables();
+    }
+
+    function showNewTableModal() {
+        showModal(`
+            <h2>Новая таблица</h2>
+            <div class="modal-field">
+                <label>Название</label>
+                <input id="newTableName" placeholder="Например: Июль 2024">
+            </div>
+            <div class="modal-field">
+                <label>Тип таблицы</label>
+                <select id="newTableType">
+                    <option value="budget">Бюджет (с общим бюджетом и остатком)</option>
+                    <option value="subscriptions">Подписки (итого в месяц)</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn" onclick="closeModal()">Отмена</button>
+                <button class="btn btn-primary" onclick="confirmNewTable()">Создать</button>
+            </div>
+        `);
+        setTimeout(() => document.getElementById('newTableName').focus(), 100);
+    }
+
+    function confirmNewTable() {
+        const name = document.getElementById('newTableName').value.trim();
+        const type = document.getElementById('newTableType').value;
+        if (!name) return;
+
+        let table;
+        if (type === 'budget') {
+            table = {
+                id: generateId(),
+                title: name,
+                type: 'budget',
+                columns: [
+                    { id: generateId(), name: 'Статья' },
+                    { id: generateId(), name: 'Сумма' }
+                ],
+                budget: 0,
+                rows: [],
+                amountColumnIndex: 1,
+                distribution: []
+            };
+        } else {
+            table = {
+                id: generateId(),
+                title: name,
+                type: 'subscriptions',
+                columns: [
+                    { id: generateId(), name: 'Название' },
+                    { id: generateId(), name: 'Дата' },
+                    { id: generateId(), name: 'Стоимость' }
+                ],
+                rows: [],
+                amountColumnIndex: 2
+            };
+        }
+
+        appData.tables.push(table);
+        saveData();
+        renderTables();
+        closeModal();
+    }
+
+    function showModal(html) {
+        document.getElementById('modalContent').innerHTML = html;
+        document.getElementById('modalOverlay').classList.add('active');
+    }
+
+    function closeModal(event) {
+        if (event && event.target !== event.currentTarget) return;
+        document.getElementById('modalOverlay').classList.remove('active');
+    }
+
+    function exportData() {
+        const blob = new Blob([JSON.stringify(appData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `finance_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function importData() {
+        document.getElementById('importInput').click();
+    }
+
+    function handleImport(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (data.tables) {
+                    appData = data;
+                    saveData();
+                    renderTables();
+                }
+            } catch(err) {
+                alert('Ошибка чтения файла');
+            }
+        };
+        reader.readAsText(file);
+        event.target.value = '';
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeModal();
+    });
+
+    loadData();
+    renderTables();
+    </script>
+</body>
+</html>

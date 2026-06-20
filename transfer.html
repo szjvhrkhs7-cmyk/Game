@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Яндекс Диск → Google Drive</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f0f23;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 1.8em;
+            margin: 30px 0 10px;
+            background: linear-gradient(135deg, #ff5c5c, #4285f4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle { color: #888; margin-bottom: 30px; font-size: 0.95em; }
+        .container {
+            width: 100%;
+            max-width: 800px;
+        }
+        .step {
+            background: #1a1a2e;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 16px;
+            border: 1px solid #2a2a4a;
+        }
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .step-num {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 0.9em;
+            flex-shrink: 0;
+        }
+        .step-yandex .step-num { background: #ff5c5c; color: #fff; }
+        .step-google .step-num { background: #4285f4; color: #fff; }
+        .step-transfer .step-num { background: #34a853; color: #fff; }
+        .step h2 { font-size: 1.1em; }
+        .token-row {
+            display: flex; gap: 10px; margin-bottom: 12px;
+        }
+        input[type="text"], input[type="password"] {
+            flex: 1;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid #3a3a5a;
+            background: #12122a;
+            color: #e0e0e0;
+            font-size: 0.95em;
+            outline: none;
+        }
+        input:focus { border-color: #4285f4; }
+        button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            font-size: 0.95em;
+            cursor: pointer;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+        button:hover { opacity: 0.85; }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-yandex { background: #ff5c5c; color: #fff; }
+        .btn-google { background: #4285f4; color: #fff; }
+        .btn-transfer { background: #34a853; color: #fff; width: 100%; padding: 14px; font-size: 1.05em; }
+        .btn-small { padding: 8px 14px; font-size: 0.85em; }
+        .status {
+            margin-top: 10px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            display: none;
+        }
+        .status.ok { display: block; background: #1a3a1a; color: #4caf50; border: 1px solid #2a5a2a; }
+        .status.err { display: block; background: #3a1a1a; color: #f44336; border: 1px solid #5a2a2a; }
+        .status.info { display: block; background: #1a2a3a; color: #64b5f6; border: 1px solid #2a3a5a; }
+        .file-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 12px;
+            border: 1px solid #2a2a4a;
+            border-radius: 8px;
+        }
+        .file-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 12px;
+            border-bottom: 1px solid #2a2a4a;
+            font-size: 0.9em;
+        }
+        .file-item:last-child { border-bottom: none; }
+        .file-item input[type="checkbox"] { flex-shrink: 0; }
+        .file-icon { font-size: 1.2em; }
+        .file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .file-size { color: #888; font-size: 0.85em; flex-shrink: 0; }
+        .select-all { margin-bottom: 8px; display: flex; align-items: center; gap: 8px; font-size: 0.9em; }
+        .progress-container {
+            margin-top: 16px;
+            display: none;
+        }
+        .progress-container.active { display: block; }
+        .progress-bar {
+            height: 8px;
+            background: #2a2a4a;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff5c5c, #4285f4);
+            border-radius: 4px;
+            transition: width 0.3s;
+            width: 0%;
+        }
+        .progress-text { font-size: 0.85em; color: #888; }
+        .log {
+            margin-top: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            background: #0a0a1a;
+            border-radius: 8px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 0.8em;
+            line-height: 1.6;
+        }
+        .log-entry { color: #888; }
+        .log-entry.success { color: #4caf50; }
+        .log-entry.error { color: #f44336; }
+        .help-text { font-size: 0.82em; color: #666; margin-top: 8px; line-height: 1.5; }
+        .help-text a { color: #64b5f6; text-decoration: none; }
+        .help-text a:hover { text-decoration: underline; }
+        .folder-path {
+            display: flex; gap: 10px; margin-top: 12px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+        .badge-ok { background: #1a3a1a; color: #4caf50; }
+        .badge-no { background: #3a2a1a; color: #ffa726; }
+    </style>
+</head>
+<body>
+    <h1>Яндекс Диск → Google Drive</h1>
+    <p class="subtitle">Перенос файлов между облачными хранилищами</p>
+
+    <div class="container">
+        <!-- Step 1: Yandex -->
+        <div class="step step-yandex">
+            <div class="step-header">
+                <div class="step-num">1</div>
+                <h2>Яндекс Диск <span id="yaBadge" class="badge badge-no">не подключён</span></h2>
+            </div>
+            <div class="token-row">
+                <input type="password" id="yaToken" placeholder="OAuth-токен Яндекс Диска">
+                <button class="btn-yandex btn-small" onclick="connectYandex()">Подключить</button>
+            </div>
+            <p class="help-text">
+                Получите токен: <a href="https://yandex.ru/dev/disk/poligon/" target="_blank">Яндекс OAuth</a> →
+                создайте приложение → скопируйте токен
+            </p>
+            <div id="yaStatus" class="status"></div>
+
+            <div class="folder-path" style="display:none" id="yaFolderRow">
+                <input type="text" id="yaFolder" placeholder="Путь к папке (например: / или /Documents)" value="/">
+                <button class="btn-yandex btn-small" onclick="loadFiles()">Загрузить файлы</button>
+            </div>
+
+            <div id="fileListContainer" style="display:none">
+                <div class="select-all">
+                    <input type="checkbox" id="selectAll" onchange="toggleSelectAll()" checked>
+                    <label for="selectAll">Выбрать все</label>
+                    <span id="fileCount" style="margin-left:auto; color:#888; font-size:0.85em"></span>
+                </div>
+                <div class="file-list" id="fileList"></div>
+            </div>
+        </div>
+
+        <!-- Step 2: Google -->
+        <div class="step step-google">
+            <div class="step-header">
+                <div class="step-num">2</div>
+                <h2>Google Drive <span id="gdBadge" class="badge badge-no">не подключён</span></h2>
+            </div>
+            <div class="token-row">
+                <input type="password" id="gdToken" placeholder="OAuth-токен Google Drive">
+                <button class="btn-google btn-small" onclick="connectGoogle()">Подключить</button>
+            </div>
+            <p class="help-text">
+                Получите токен через <a href="https://developers.google.com/oauthplayground/" target="_blank">OAuth 2.0 Playground</a> →
+                выберите Drive API v3 → авторизуйтесь → скопируйте Access Token
+            </p>
+            <div id="gdStatus" class="status"></div>
+            <div class="folder-path" style="display:none" id="gdFolderRow">
+                <input type="text" id="gdFolder" placeholder="Имя папки на Google Drive (будет создана)" value="YandexDisk-Import">
+            </div>
+        </div>
+
+        <!-- Step 3: Transfer -->
+        <div class="step step-transfer">
+            <div class="step-header">
+                <div class="step-num">3</div>
+                <h2>Перенос</h2>
+            </div>
+            <button class="btn-transfer" id="transferBtn" onclick="startTransfer()" disabled>
+                Начать перенос
+            </button>
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+                <div class="progress-text" id="progressText">Подготовка...</div>
+            </div>
+            <div class="log" id="log" style="display:none"></div>
+        </div>
+    </div>
+
+    <script>
+    let yaConnected = false;
+    let gdConnected = false;
+    let yaFiles = [];
+    let transferring = false;
+
+    function setStatus(id, text, type) {
+        const el = document.getElementById(id);
+        el.className = 'status ' + type;
+        el.textContent = text;
+    }
+
+    function log(text, type = '') {
+        const logEl = document.getElementById('log');
+        logEl.style.display = 'block';
+        const entry = document.createElement('div');
+        entry.className = 'log-entry ' + type;
+        entry.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
+        logEl.appendChild(entry);
+        logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function formatSize(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    function fileIcon(type, name) {
+        if (type === 'dir') return '📁';
+        const ext = name.split('.').pop().toLowerCase();
+        const icons = {
+            jpg: '🖼️', jpeg: '🖼️', png: '🖼️', gif: '🖼️', svg: '🖼️', webp: '🖼️',
+            mp4: '🎬', avi: '🎬', mkv: '🎬', mov: '🎬',
+            mp3: '🎵', wav: '🎵', flac: '🎵', ogg: '🎵',
+            pdf: '📄', doc: '📝', docx: '📝', txt: '📝',
+            zip: '📦', rar: '📦', '7z': '📦', tar: '📦',
+            xls: '📊', xlsx: '📊', csv: '📊',
+        };
+        return icons[ext] || '📄';
+    }
+
+    function updateTransferButton() {
+        const btn = document.getElementById('transferBtn');
+        btn.disabled = !(yaConnected && gdConnected && yaFiles.length > 0) || transferring;
+    }
+
+    async function connectYandex() {
+        const token = document.getElementById('yaToken').value.trim();
+        if (!token) { setStatus('yaStatus', 'Введите токен', 'err'); return; }
+
+        setStatus('yaStatus', 'Подключение...', 'info');
+        try {
+            const resp = await fetch('https://cloud-api.yandex.net/v1/disk/', {
+                headers: { 'Authorization': 'OAuth ' + token }
+            });
+            if (!resp.ok) throw new Error('Неверный токен или ошибка API');
+            const data = await resp.json();
+            yaConnected = true;
+            document.getElementById('yaBadge').className = 'badge badge-ok';
+            document.getElementById('yaBadge').textContent = 'подключён';
+            setStatus('yaStatus',
+                `Подключено! Использовано: ${formatSize(data.used_space)} из ${formatSize(data.total_space)}`, 'ok');
+            document.getElementById('yaFolderRow').style.display = 'flex';
+            loadFiles();
+        } catch (e) {
+            setStatus('yaStatus', 'Ошибка: ' + e.message, 'err');
+        }
+    }
+
+    async function loadFiles() {
+        const token = document.getElementById('yaToken').value.trim();
+        const folder = document.getElementById('yaFolder').value.trim() || '/';
+
+        setStatus('yaStatus', 'Загрузка списка файлов...', 'info');
+        try {
+            const allItems = [];
+            let offset = 0;
+            const limit = 100;
+            while (true) {
+                const url = `https://cloud-api.yandex.net/v1/disk/resources?path=${encodeURIComponent(folder)}&limit=${limit}&offset=${offset}`;
+                const resp = await fetch(url, { headers: { 'Authorization': 'OAuth ' + token } });
+                if (!resp.ok) throw new Error('Не удалось загрузить папку: ' + folder);
+                const data = await resp.json();
+                if (!data._embedded || !data._embedded.items) break;
+                allItems.push(...data._embedded.items);
+                if (allItems.length >= data._embedded.total) break;
+                offset += limit;
+            }
+
+            yaFiles = allItems;
+            renderFileList();
+            setStatus('yaStatus', `Найдено ${allItems.length} элементов`, 'ok');
+            document.getElementById('fileListContainer').style.display = 'block';
+            updateTransferButton();
+        } catch (e) {
+            setStatus('yaStatus', 'Ошибка: ' + e.message, 'err');
+        }
+    }
+
+    function renderFileList() {
+        const container = document.getElementById('fileList');
+        container.innerHTML = '';
+        yaFiles.forEach((f, i) => {
+            const div = document.createElement('div');
+            div.className = 'file-item';
+            const name = f.name || f.path.split('/').pop();
+            div.innerHTML = `
+                <input type="checkbox" data-index="${i}" checked>
+                <span class="file-icon">${fileIcon(f.type, name)}</span>
+                <span class="file-name" title="${f.path}">${name}</span>
+                <span class="file-size">${f.type === 'dir' ? 'папка' : formatSize(f.size || 0)}</span>
+            `;
+            container.appendChild(div);
+        });
+        document.getElementById('fileCount').textContent = `${yaFiles.length} файлов`;
+    }
+
+    function toggleSelectAll() {
+        const checked = document.getElementById('selectAll').checked;
+        document.querySelectorAll('#fileList input[type="checkbox"]').forEach(cb => cb.checked = checked);
+    }
+
+    function getSelectedFiles() {
+        const selected = [];
+        document.querySelectorAll('#fileList input[type="checkbox"]').forEach(cb => {
+            if (cb.checked) selected.push(yaFiles[parseInt(cb.dataset.index)]);
+        });
+        return selected;
+    }
+
+    async function connectGoogle() {
+        const token = document.getElementById('gdToken').value.trim();
+        if (!token) { setStatus('gdStatus', 'Введите токен', 'err'); return; }
+
+        setStatus('gdStatus', 'Подключение...', 'info');
+        try {
+            const resp = await fetch('https://www.googleapis.com/drive/v3/about?fields=user,storageQuota', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (!resp.ok) throw new Error('Неверный токен или ошибка API');
+            const data = await resp.json();
+            gdConnected = true;
+            document.getElementById('gdBadge').className = 'badge badge-ok';
+            document.getElementById('gdBadge').textContent = 'подключён';
+            const used = data.storageQuota ? formatSize(parseInt(data.storageQuota.usage)) : '?';
+            const total = data.storageQuota && data.storageQuota.limit ? formatSize(parseInt(data.storageQuota.limit)) : '∞';
+            setStatus('gdStatus', `Подключено как ${data.user.displayName}. Использовано: ${used} из ${total}`, 'ok');
+            document.getElementById('gdFolderRow').style.display = 'flex';
+            updateTransferButton();
+        } catch (e) {
+            setStatus('gdStatus', 'Ошибка: ' + e.message, 'err');
+        }
+    }
+
+    async function createGoogleFolder(name, parentId, token) {
+        const resp = await fetch('https://www.googleapis.com/drive/v3/files', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: name,
+                mimeType: 'application/vnd.google-apps.folder',
+                parents: parentId ? [parentId] : []
+            })
+        });
+        if (!resp.ok) throw new Error('Не удалось создать папку: ' + name);
+        const data = await resp.json();
+        return data.id;
+    }
+
+    async function downloadFromYandex(filePath, yaToken) {
+        const url = `https://cloud-api.yandex.net/v1/disk/resources/download?path=${encodeURIComponent(filePath)}`;
+        const resp = await fetch(url, { headers: { 'Authorization': 'OAuth ' + yaToken } });
+        if (!resp.ok) throw new Error('Не удалось получить ссылку для скачивания: ' + filePath);
+        const data = await resp.json();
+        const fileResp = await fetch(data.href);
+        if (!fileResp.ok) throw new Error('Не удалось скачать файл: ' + filePath);
+        return await fileResp.blob();
+    }
+
+    async function uploadToGoogle(blob, fileName, parentId, gdToken) {
+        const metadata = { name: fileName };
+        if (parentId) metadata.parents = [parentId];
+
+        const form = new FormData();
+        form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+        form.append('file', blob);
+
+        const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + gdToken },
+            body: form
+        });
+        if (!resp.ok) {
+            const err = await resp.text();
+            throw new Error('Не удалось загрузить файл: ' + err);
+        }
+        return await resp.json();
+    }
+
+    async function transferFolder(folderPath, parentGdId, yaToken, gdToken, progress) {
+        const items = [];
+        let offset = 0;
+        const limit = 100;
+        while (true) {
+            const url = `https://cloud-api.yandex.net/v1/disk/resources?path=${encodeURIComponent(folderPath)}&limit=${limit}&offset=${offset}`;
+            const resp = await fetch(url, { headers: { 'Authorization': 'OAuth ' + yaToken } });
+            if (!resp.ok) throw new Error('Ошибка чтения папки: ' + folderPath);
+            const data = await resp.json();
+            if (!data._embedded || !data._embedded.items) break;
+            items.push(...data._embedded.items);
+            if (items.length >= data._embedded.total) break;
+            offset += limit;
+        }
+
+        for (const item of items) {
+            const name = item.name || item.path.split('/').pop();
+            if (item.type === 'dir') {
+                log(`📁 Создаю папку: ${name}`);
+                const newFolderId = await createGoogleFolder(name, parentGdId, gdToken);
+                await transferFolder(item.path, newFolderId, yaToken, gdToken, progress);
+            } else {
+                log(`⬇️ Скачиваю: ${name} (${formatSize(item.size || 0)})`);
+                try {
+                    const blob = await downloadFromYandex(item.path, yaToken);
+                    log(`⬆️ Загружаю: ${name}`);
+                    await uploadToGoogle(blob, name, parentGdId, gdToken);
+                    progress.done++;
+                    log(`✅ ${name}`, 'success');
+                } catch (e) {
+                    progress.errors++;
+                    log(`❌ ${name}: ${e.message}`, 'error');
+                }
+                progress.current++;
+                updateProgress(progress);
+            }
+        }
+    }
+
+    function updateProgress(progress) {
+        const pct = progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0;
+        document.getElementById('progressFill').style.width = pct + '%';
+        document.getElementById('progressText').textContent =
+            `${progress.current} / ${progress.total} файлов (${pct}%) | ✅ ${progress.done} | ❌ ${progress.errors}`;
+    }
+
+    function countFiles(files) {
+        let count = 0;
+        for (const f of files) {
+            if (f.type !== 'dir') count++;
+            else count += 5; // approximate for folders
+        }
+        return count;
+    }
+
+    async function startTransfer() {
+        if (transferring) return;
+        transferring = true;
+        const btn = document.getElementById('transferBtn');
+        btn.disabled = true;
+        btn.textContent = 'Перенос...';
+
+        const yaToken = document.getElementById('yaToken').value.trim();
+        const gdToken = document.getElementById('gdToken').value.trim();
+        const gdFolderName = document.getElementById('gdFolder').value.trim() || 'YandexDisk-Import';
+        const selected = getSelectedFiles();
+
+        document.getElementById('progressContainer').classList.add('active');
+        document.getElementById('log').style.display = 'block';
+
+        const progress = { current: 0, total: countFiles(selected), done: 0, errors: 0 };
+        updateProgress(progress);
+
+        try {
+            log(`📁 Создаю папку "${gdFolderName}" на Google Drive...`);
+            const rootFolderId = await createGoogleFolder(gdFolderName, null, gdToken);
+            log(`✅ Папка создана`, 'success');
+
+            for (const file of selected) {
+                const name = file.name || file.path.split('/').pop();
+                if (file.type === 'dir') {
+                    log(`📁 Обработка папки: ${name}`);
+                    const folderId = await createGoogleFolder(name, rootFolderId, gdToken);
+                    await transferFolder(file.path, folderId, yaToken, gdToken, progress);
+                } else {
+                    log(`⬇️ Скачиваю: ${name} (${formatSize(file.size || 0)})`);
+                    try {
+                        const blob = await downloadFromYandex(file.path, yaToken);
+                        log(`⬆️ Загружаю на Google Drive: ${name}`);
+                        await uploadToGoogle(blob, name, rootFolderId, gdToken);
+                        progress.done++;
+                        log(`✅ ${name}`, 'success');
+                    } catch (e) {
+                        progress.errors++;
+                        log(`❌ ${name}: ${e.message}`, 'error');
+                    }
+                    progress.current++;
+                    updateProgress(progress);
+                }
+            }
+
+            log(`🎉 Перенос завершён! Успешно: ${progress.done}, ошибок: ${progress.errors}`, 'success');
+        } catch (e) {
+            log(`❌ Критическая ошибка: ${e.message}`, 'error');
+        }
+
+        transferring = false;
+        btn.disabled = false;
+        btn.textContent = 'Начать перенос';
+    }
+    </script>
+</body>
+</html>

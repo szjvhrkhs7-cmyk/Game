@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Юрист — Рабочее пространство</title>
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9878;</text></svg>">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #0a0a0a;
+            --card: #111;
+            --card-border: #1e1e1e;
+            --card-hover: #161616;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --text-muted: #555;
+            --accent-blue: #4fc3f7;
+            --accent-green: #66bb6a;
+            --accent-orange: #ff8a65;
+            --accent-red: #ff5252;
+            --accent-purple: #b39ddb;
+            --accent-yellow: #ffd54f;
+            --border: #222;
+            --border-light: #1a1a1a;
+            --input-focus: #444;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            min-height: 100dvh;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        .app {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 0 16px 100px;
+        }
+
+        /* Header */
+        .app-header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: rgba(10,10,10,0.85);
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+            padding: 14px 0 10px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 12px;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .header-top h1 {
+            font-size: 26px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .save-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #333;
+            transition: background 0.3s;
+        }
+
+        .save-dot.saved { background: var(--accent-green); }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            padding-bottom: 2px;
+        }
+
+        .tabs::-webkit-scrollbar { display: none; }
+
+        .tab {
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-dim);
+            background: none;
+            border: 1px solid transparent;
+            cursor: pointer;
+            white-space: nowrap;
+            font-family: inherit;
+            transition: all 0.15s;
+        }
+
+        .tab:hover { color: var(--text); background: #1a1a1a; }
+
+        .tab.active {
+            color: #fff;
+            background: #1a1a2e;
+            border-color: #2a2a4e;
+        }
+
+        /* Buttons */
+        .btn {
+            background: #1a1a2e;
+            border: 1px solid #2a2a3e;
+            color: var(--text);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-family: inherit;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+
+        .btn:hover { background: #2a2a3e; }
+        .btn:active { transform: scale(0.97); }
+
+        .btn-primary { background: #1a3a1a; border-color: #2a5a2a; color: var(--accent-green); }
+        .btn-primary:hover { background: #2a5a2a; }
+
+        .btn-danger { background: #3a1a1a; border-color: #5a2a2a; color: var(--accent-red); }
+        .btn-danger:hover { background: #5a2a2a; }
+
+        .btn-sm { padding: 5px 10px; font-size: 12px; border-radius: 7px; }
+
+        .btn-icon {
+            width: 30px; height: 30px; padding: 0;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 8px; font-size: 15px;
+        }
+
+        /* Section */
+        .section { display: none; }
+        .section.active { display: block; }
+
+        .section-actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+
+        /* Cards / Tables */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            overflow: hidden;
+            margin-bottom: 14px;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #fff;
+            background: none;
+            border: none;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .badge {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+
+        .badge-blue { background: #102030; color: var(--accent-blue); }
+        .badge-green { background: #102010; color: var(--accent-green); }
+        .badge-orange { background: #201510; color: var(--accent-orange); }
+        .badge-red { background: #201010; color: var(--accent-red); }
+        .badge-purple { background: #1a1020; color: var(--accent-purple); }
+        .badge-yellow { background: #201a10; color: var(--accent-yellow); }
+
+        .tbl {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .tbl th {
+            text-align: left;
+            padding: 9px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-dim);
+            background: #0d0d0d;
+            border-bottom: 1px solid var(--border-light);
+            white-space: nowrap;
+        }
+
+        .tbl td {
+            padding: 7px 12px;
+            font-size: 14px;
+            border-bottom: 1px solid #151515;
+            vertical-align: middle;
+            position: relative;
+        }
+
+        .tbl tr.row-data:hover { background: var(--card-hover); }
+        .tbl tr.row-data:hover .row-del { opacity: 1; }
+
+        .row-del {
+            position: absolute; left: 1px; top: 50%;
+            transform: translateY(-50%);
+            opacity: 0; background: #3a1a1a; border: none;
+            color: var(--accent-red); cursor: pointer;
+            font-size: 9px; width: 16px; height: 16px;
+            border-radius: 50%; display: flex;
+            align-items: center; justify-content: center;
+            transition: opacity 0.12s; padding: 0;
+        }
+
+        .inp {
+            background: none; border: none;
+            color: var(--text); font-size: 14px;
+            font-family: inherit; outline: none;
+            width: 100%; padding: 1px 0;
+        }
+
+        .inp:focus { border-bottom: 1px solid var(--input-focus); }
+
+        .inp-num {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            color: var(--accent-blue);
+        }
+
+        .inp-money { color: var(--accent-green); }
+
+        .tbl .sum-row td {
+            font-weight: 600;
+            border-top: 1px solid #2a2a2a;
+            padding: 10px 12px;
+        }
+
+        .sum-label { color: var(--text-dim); font-size: 13px; }
+        .sum-val { text-align: right; font-variant-numeric: tabular-nums; }
+
+        .add-row-area { padding: 6px 12px 10px; }
+
+        .add-row-btn {
+            width: 100%; padding: 8px;
+            background: none; border: 1px dashed #262626;
+            color: var(--text-muted); border-radius: 8px;
+            cursor: pointer; font-size: 12px; font-family: inherit;
+            transition: all 0.15s;
+        }
+
+        .add-row-btn:hover { border-color: #444; color: var(--text-dim); background: #141414; }
+
+        /* Status select */
+        .status-sel {
+            background: none; border: none;
+            font-size: 13px; font-family: inherit;
+            outline: none; cursor: pointer;
+            padding: 2px 4px; border-radius: 4px;
+            -webkit-appearance: none; appearance: none;
+        }
+
+        .status-active { color: var(--accent-green); }
+        .status-court { color: var(--accent-orange); }
+        .status-waiting { color: var(--accent-yellow); }
+        .status-done { color: var(--text-dim); }
+        .status-urgent { color: var(--accent-red); }
+
+        /* Stats bar */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 12px 14px;
+        }
+
+        .stat-label { font-size: 11px; color: var(--text-dim); margin-bottom: 4px; }
+        .stat-value { font-size: 22px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
+        .stat-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 100; opacity: 0; pointer-events: none;
+            transition: opacity 0.15s;
+        }
+
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+
+        .modal {
+            background: #1a1a1a; border: 1px solid #333;
+            border-radius: 16px; padding: 22px;
+            width: 92%; max-width: 420px;
+            transform: scale(0.95); transition: transform 0.15s;
+        }
+
+        .modal-overlay.active .modal { transform: scale(1); }
+
+        .modal h2 { font-size: 17px; margin-bottom: 14px; color: #fff; }
+
+        .field { margin-bottom: 12px; }
+        .field label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 5px; }
+
+        .field input, .field select, .field textarea {
+            width: 100%; padding: 9px 11px;
+            background: #111; border: 1px solid #333;
+            border-radius: 8px; color: var(--text);
+            font-size: 14px; font-family: inherit; outline: none;
+            resize: vertical;
+        }
+
+        .field input:focus, .field select:focus, .field textarea:focus { border-color: #555; }
+
+        .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+
+        /* Priority indicator */
+        .priority-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%; display: inline-block;
+            margin-right: 4px; vertical-align: middle;
+        }
+
+        .p-high { background: var(--accent-red); }
+        .p-medium { background: var(--accent-yellow); }
+        .p-low { background: var(--accent-green); }
+
+        /* Deadline warning */
+        .deadline-soon { color: var(--accent-orange) !important; }
+        .deadline-overdue { color: var(--accent-red) !important; }
+
+        /* Notes section */
+        .note-card {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 10px;
+        }
+
+        .note-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .note-title {
+            font-weight: 600; font-size: 14px; color: #fff;
+            background: none; border: none; outline: none;
+            font-family: inherit; width: 70%;
+        }
+
+        .note-date { font-size: 11px; color: var(--text-muted); }
+
+        .note-body {
+            background: none; border: none; outline: none;
+            color: var(--text); font-size: 13px;
+            font-family: inherit; width: 100%;
+            min-height: 40px; resize: none;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 480px) {
+            .app { padding: 0 10px 100px; }
+            .tbl td, .tbl th { padding: 6px 8px; font-size: 13px; }
+            .inp { font-size: 13px; }
+            .stat-value { font-size: 18px; }
+            .stats-bar { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="app-header">
+        <div class="header-top">
+            <h1>Юрист</h1>
+            <div class="header-actions">
+                <div class="save-dot" id="saveDot"></div>
+                <button class="btn btn-sm" onclick="exportData()">&#8681;</button>
+                <button class="btn btn-sm" onclick="importData()">&#8679;</button>
+            </div>
+        </div>
+        <div class="tabs" id="tabs">
+            <button class="tab active" data-tab="cases">Дела</button>
+            <button class="tab" data-tab="calendar">Календарь</button>
+            <button class="tab" data-tab="billing">Биллинг</button>
+            <button class="tab" data-tab="docs">Документы</button>
+            <button class="tab" data-tab="notes">Заметки</button>
+        </div>
+    </div>
+
+    <!-- ДЕЛА -->
+    <div class="section active" id="sec-cases">
+        <div class="stats-bar" id="casesStats"></div>
+        <div class="section-actions">
+            <button class="btn btn-primary btn-sm" onclick="addCase()">+ Новое дело</button>
+        </div>
+        <div id="casesContainer"></div>
+    </div>
+
+    <!-- КАЛЕНДАРЬ -->
+    <div class="section" id="sec-calendar">
+        <div class="section-actions">
+            <button class="btn btn-primary btn-sm" onclick="addEvent()">+ Событие</button>
+        </div>
+        <div id="calendarContainer"></div>
+    </div>
+
+    <!-- БИЛЛИНГ -->
+    <div class="section" id="sec-billing">
+        <div class="stats-bar" id="billingStats"></div>
+        <div class="section-actions">
+            <button class="btn btn-primary btn-sm" onclick="addBillingEntry()">+ Запись</button>
+        </div>
+        <div id="billingContainer"></div>
+    </div>
+
+    <!-- ДОКУМЕНТЫ -->
+    <div class="section" id="sec-docs">
+        <div class="section-actions">
+            <button class="btn btn-primary btn-sm" onclick="addDoc()">+ Документ</button>
+        </div>
+        <div id="docsContainer"></div>
+    </div>
+
+    <!-- ЗАМЕТКИ -->
+    <div class="section" id="sec-notes">
+        <div class="section-actions">
+            <button class="btn btn-primary btn-sm" onclick="addNote()">+ Заметка</button>
+        </div>
+        <div id="notesContainer"></div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()"></div>
+<input type="file" id="importInput" accept=".json" style="display:none" onchange="handleImport(event)">
+
+<script>
+const SK = 'lawyer_app_data';
+let D = { cases: [], events: [], billing: [], docs: [], notes: [] };
+
+const uid = () => Date.now().toString(36) + Math.random().toString(36).substr(2,5);
+const fmtN = n => { const v = parseFloat(n); return isNaN(v) ? '0' : v.toLocaleString('ru-RU'); };
+const parseN = s => parseFloat((s||'').toString().replace(/[^\d.-]/g,'')) || 0;
+const esc = s => { const d = document.createElement('div'); d.textContent = s||''; return d.innerHTML; };
+const today = () => new Date().toISOString().slice(0,10);
+
+function load() {
+    try { const s = localStorage.getItem(SK); if(s) D = JSON.parse(s); } catch(e) {}
+    if (!D.cases) D.cases = [];
+    if (!D.events) D.events = [];
+    if (!D.billing) D.billing = [];
+    if (!D.docs) D.docs = [];
+    if (!D.notes) D.notes = [];
+    if (!D.cases.length && !D.events.length) createDefaults();
+}
+
+function save() {
+    localStorage.setItem(SK, JSON.stringify(D));
+    const dot = document.getElementById('saveDot');
+    dot.classList.add('saved');
+    setTimeout(() => dot.classList.remove('saved'), 1200);
+}
+
+function createDefaults() {
+    D.cases = [
+        { id: uid(), number: 'А40-12345/2024', client: 'ООО "Альфа"', category: 'Арбитраж', status: 'active', priority: 'high', nextDate: '2024-07-15', notes: 'Взыскание задолженности по договору поставки' },
+        { id: uid(), number: '2-4567/2024', client: 'Иванов И.И.', category: 'Гражданское', status: 'court', priority: 'medium', nextDate: '2024-07-10', notes: 'Раздел имущества' },
+        { id: uid(), number: 'А56-7890/2024', client: 'ИП Петров', category: 'Арбитраж', status: 'waiting', priority: 'low', nextDate: '2024-08-01', notes: 'Обжалование решения ФНС' },
+    ];
+    D.events = [
+        { id: uid(), date: '2024-07-10', time: '10:00', caseNum: '2-4567/2024', type: 'Заседание', court: 'Мосгорсуд', notes: '' },
+        { id: uid(), date: '2024-07-15', time: '14:30', caseNum: 'А40-12345/2024', type: 'Заседание', court: 'АС г. Москвы', notes: 'Предварительное' },
+        { id: uid(), date: '2024-07-20', time: '', caseNum: 'А40-12345/2024', type: 'Срок', court: '', notes: 'Подача отзыва на встречный иск' },
+    ];
+    D.billing = [
+        { id: uid(), date: '2024-07-01', client: 'ООО "Альфа"', description: 'Подготовка искового заявления', hours: '4', rate: '5000', paid: false },
+        { id: uid(), date: '2024-07-03', client: 'Иванов И.И.', description: 'Консультация', hours: '1.5', rate: '4000', paid: false },
+        { id: uid(), date: '2024-07-05', client: 'ООО "Альфа"', description: 'Участие в заседании', hours: '3', rate: '5000', paid: false },
+        { id: uid(), date: '2024-06-15', client: 'ИП Петров', description: 'Анализ документов', hours: '6', rate: '3500', paid: true },
+    ];
+    D.docs = [
+        { id: uid(), name: 'Исковое заявление', caseNum: 'А40-12345/2024', status: 'done', deadline: '2024-06-30' },
+        { id: uid(), name: 'Отзыв на встречный иск', caseNum: 'А40-12345/2024', status: 'progress', deadline: '2024-07-20' },
+        { id: uid(), name: 'Ходатайство о назначении экспертизы', caseNum: '2-4567/2024', status: 'draft', deadline: '2024-07-08' },
+        { id: uid(), name: 'Жалоба в ФНС', caseNum: 'А56-7890/2024', status: 'review', deadline: '2024-07-25' },
+    ];
+    D.notes = [
+        { id: uid(), title: 'Звонок клиенту Альфа', date: today(), body: 'Обсудить стратегию по встречному иску. Клиент готов к мировому соглашению при условии снижения суммы на 30%.' },
+    ];
+    save();
+}
+
+// === TABS ===
+document.getElementById('tabs').addEventListener('click', e => {
+    const tab = e.target.closest('.tab');
+    if (!tab) return;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('sec-' + tab.dataset.tab).classList.add('active');
+});
+
+// === CASES ===
+function renderCases() {
+    const c = document.getElementById('casesContainer');
+    const stats = document.getElementById('casesStats');
+
+    const active = D.cases.filter(x => x.status !== 'done').length;
+    const court = D.cases.filter(x => x.status === 'court').length;
+    const urgent = D.cases.filter(x => x.priority === 'high' && x.status !== 'done').length;
+
+    stats.innerHTML = `
+        <div class="stat-card"><div class="stat-label">Активных дел</div><div class="stat-value">${active}</div></div>
+        <div class="stat-card"><div class="stat-label">В суде</div><div class="stat-value" style="color:var(--accent-orange)">${court}</div></div>
+        <div class="stat-card"><div class="stat-label">Срочных</div><div class="stat-value" style="color:var(--accent-red)">${urgent}</div></div>
+        <div class="stat-card"><div class="stat-label">Всего</div><div class="stat-value">${D.cases.length}</div></div>
+    `;
+
+    let html = '<div class="card"><table class="tbl"><thead><tr>';
+    html += '<th></th><th>Дело</th><th>Клиент</th><th>Категория</th><th>Статус</th><th>Дата</th>';
+    html += '</tr></thead><tbody>';
+
+    D.cases.forEach(cs => {
+        const pClass = cs.priority === 'high' ? 'p-high' : cs.priority === 'medium' ? 'p-medium' : 'p-low';
+        const sClass = 'status-' + cs.status;
+        const statusOpts = [['active','Активно'],['court','В суде'],['waiting','Ожидание'],['done','Завершено'],['urgent','Срочно']];
+        const selHtml = statusOpts.map(([v,l]) => `<option value="${v}" ${cs.status===v?'selected':''}>${l}</option>`).join('');
+
+        html += `<tr class="row-data">
+            <td><span class="priority-dot ${pClass}" title="${cs.priority}"></span>
+                <button class="row-del" onclick="delCase('${cs.id}')">&times;</button></td>
+            <td><input class="inp" value="${esc(cs.number)}" onchange="updCase('${cs.id}','number',this.value)" style="font-weight:600;color:#fff;min-width:120px"></td>
+            <td><input class="inp" value="${esc(cs.client)}" onchange="updCase('${cs.id}','client',this.value)" style="min-width:100px"></td>
+            <td><input class="inp" value="${esc(cs.category)}" onchange="updCase('${cs.id}','category',this.value)" style="min-width:80px"></td>
+            <td><select class="status-sel ${sClass}" onchange="updCase('${cs.id}','status',this.value);this.className='status-sel status-'+this.value">${selHtml}</select></td>
+            <td><input class="inp" type="date" value="${cs.nextDate||''}" onchange="updCase('${cs.id}','nextDate',this.value)" style="min-width:110px;color:var(--text-dim)"></td>
+        </tr>`;
+    });
+
+    html += '</tbody></table>';
+    html += '<div class="add-row-area"><button class="add-row-btn" onclick="addCase()">+ Добавить дело</button></div>';
+    html += '</div>';
+    c.innerHTML = html;
+}
+
+function addCase() {
+    D.cases.unshift({ id: uid(), number: '', client: '', category: '', status: 'active', priority: 'medium', nextDate: '', notes: '' });
+    save(); renderCases();
+}
+
+function updCase(id, f, v) {
+    const c = D.cases.find(x => x.id === id);
+    if (c) { c[f] = v; save(); renderCases(); }
+}
+
+function delCase(id) { D.cases = D.cases.filter(x => x.id !== id); save(); renderCases(); }
+
+// === CALENDAR ===
+function renderCalendar() {
+    const c = document.getElementById('calendarContainer');
+    const sorted = [...D.events].sort((a,b) => (a.date||'').localeCompare(b.date||''));
+
+    let html = '<div class="card"><table class="tbl"><thead><tr>';
+    html += '<th>Дата</th><th>Время</th><th>Дело</th><th>Тип</th><th>Суд/Место</th><th>Прим.</th>';
+    html += '</tr></thead><tbody>';
+
+    sorted.forEach(ev => {
+        const dateClass = getDeadlineClass(ev.date);
+        html += `<tr class="row-data">
+            <td><button class="row-del" onclick="delEvent('${ev.id}')">&times;</button>
+                <input class="inp ${dateClass}" type="date" value="${ev.date||''}" onchange="updEvent('${ev.id}','date',this.value)" style="min-width:110px"></td>
+            <td><input class="inp" type="time" value="${ev.time||''}" onchange="updEvent('${ev.id}','time',this.value)" style="min-width:70px;color:var(--text-dim)"></td>
+            <td><input class="inp" value="${esc(ev.caseNum)}" onchange="updEvent('${ev.id}','caseNum',this.value)" style="font-weight:500;min-width:100px"></td>
+            <td><input class="inp" value="${esc(ev.type)}" onchange="updEvent('${ev.id}','type',this.value)" style="min-width:70px"></td>
+            <td><input class="inp" value="${esc(ev.court)}" onchange="updEvent('${ev.id}','court',this.value)" style="min-width:100px"></td>
+            <td><input class="inp" value="${esc(ev.notes)}" onchange="updEvent('${ev.id}','notes',this.value)"></td>
+        </tr>`;
+    });
+
+    html += '</tbody></table>';
+    html += '<div class="add-row-area"><button class="add-row-btn" onclick="addEvent()">+ Добавить событие</button></div>';
+    html += '</div>';
+    c.innerHTML = html;
+}
+
+function addEvent() {
+    D.events.push({ id: uid(), date: '', time: '', caseNum: '', type: '', court: '', notes: '' });
+    save(); renderCalendar();
+}
+
+function updEvent(id, f, v) {
+    const e = D.events.find(x => x.id === id);
+    if (e) { e[f] = v; save(); }
+}
+
+function delEvent(id) { D.events = D.events.filter(x => x.id !== id); save(); renderCalendar(); }
+
+function getDeadlineClass(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diff = (d - now) / (1000*60*60*24);
+    if (diff < 0) return 'deadline-overdue';
+    if (diff < 3) return 'deadline-soon';
+    return '';
+}
+
+// === BILLING ===
+function renderBilling() {
+    const c = document.getElementById('billingContainer');
+    const stats = document.getElementById('billingStats');
+
+    const totalHours = D.billing.reduce((s,b) => s + parseN(b.hours), 0);
+    const totalAmount = D.billing.reduce((s,b) => s + parseN(b.hours) * parseN(b.rate), 0);
+    const unpaid = D.billing.filter(b => !b.paid).reduce((s,b) => s + parseN(b.hours) * parseN(b.rate), 0);
+    const paid = totalAmount - unpaid;
+
+    stats.innerHTML = `
+        <div class="stat-card"><div class="stat-label">Всего часов</div><div class="stat-value">${fmtN(totalHours)}</div></div>
+        <div class="stat-card"><div class="stat-label">К оплате</div><div class="stat-value" style="color:var(--accent-orange)">${fmtN(unpaid)} &#8381;</div></div>
+        <div class="stat-card"><div class="stat-label">Оплачено</div><div class="stat-value" style="color:var(--accent-green)">${fmtN(paid)} &#8381;</div></div>
+        <div class="stat-card"><div class="stat-label">Итого</div><div class="stat-value">${fmtN(totalAmount)} &#8381;</div></div>
+    `;
+
+    let html = '<div class="card"><table class="tbl"><thead><tr>';
+    html += '<th>Дата</th><th>Клиент</th><th>Описание</th><th>Часы</th><th>Ставка</th><th>Сумма</th><th></th>';
+    html += '</tr></thead><tbody>';
+
+    D.billing.forEach(b => {
+        const sum = parseN(b.hours) * parseN(b.rate);
+        html += `<tr class="row-data">
+            <td><button class="row-del" onclick="delBilling('${b.id}')">&times;</button>
+                <input class="inp" type="date" value="${b.date||''}" onchange="updBilling('${b.id}','date',this.value)" style="min-width:105px;color:var(--text-dim)"></td>
+            <td><input class="inp" value="${esc(b.client)}" onchange="updBilling('${b.id}','client',this.value)" style="min-width:90px"></td>
+            <td><input class="inp" value="${esc(b.description)}" onchange="updBilling('${b.id}','description',this.value)" style="min-width:120px"></td>
+            <td><input class="inp inp-num" value="${b.hours}" onchange="updBilling('${b.id}','hours',this.value)" style="width:50px"></td>
+            <td><input class="inp inp-num" value="${fmtN(b.rate)}" onchange="updBilling('${b.id}','rate',this.value)"
+                onfocus="this.value=this.value.replace(/[^\\d]/g,'')" onblur="this.value=fmtN(this.value)" style="width:70px"></td>
+            <td style="text-align:right;color:var(--accent-green);font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap">${fmtN(sum)} &#8381;</td>
+            <td><button class="btn btn-sm ${b.paid?'btn-primary':''}" onclick="togglePaid('${b.id}')" style="font-size:11px">${b.paid?'Опл.':'Не опл.'}</button></td>
+        </tr>`;
+    });
+
+    html += `<tr class="sum-row">
+        <td colspan="3" class="sum-label">Итого</td>
+        <td class="sum-val" style="color:var(--accent-blue)">${fmtN(totalHours)}</td>
+        <td></td>
+        <td class="sum-val" style="color:var(--accent-green)">${fmtN(totalAmount)} &#8381;</td>
+        <td></td>
+    </tr>`;
+
+    html += '</tbody></table>';
+    html += '<div class="add-row-area"><button class="add-row-btn" onclick="addBillingEntry()">+ Добавить запись</button></div>';
+    html += '</div>';
+    c.innerHTML = html;
+}
+
+function addBillingEntry() {
+    D.billing.unshift({ id: uid(), date: today(), client: '', description: '', hours: '', rate: '', paid: false });
+    save(); renderBilling();
+}
+
+function updBilling(id, f, v) {
+    const b = D.billing.find(x => x.id === id);
+    if (b) {
+        if (f === 'rate') v = v.replace(/[^\d.-]/g, '');
+        b[f] = v;
+        save(); renderBilling();
+    }
+}
+
+function togglePaid(id) {
+    const b = D.billing.find(x => x.id === id);
+    if (b) { b.paid = !b.paid; save(); renderBilling(); }
+}
+
+function delBilling(id) { D.billing = D.billing.filter(x => x.id !== id); save(); renderBilling(); }
+
+// === DOCUMENTS ===
+function renderDocs() {
+    const c = document.getElementById('docsContainer');
+    const statusMap = { draft: ['Черновик','badge-purple'], progress: ['В работе','badge-blue'], review: ['На проверке','badge-yellow'], done: ['Готово','badge-green'] };
+
+    let html = '<div class="card"><table class="tbl"><thead><tr>';
+    html += '<th>Документ</th><th>Дело</th><th>Статус</th><th>Дедлайн</th>';
+    html += '</tr></thead><tbody>';
+
+    D.docs.forEach(doc => {
+        const [sLabel, sBadge] = statusMap[doc.status] || ['—',''];
+        const dlClass = getDeadlineClass(doc.deadline);
+        const statusOpts = [['draft','Черновик'],['progress','В работе'],['review','На проверке'],['done','Готово']];
+        const selHtml = statusOpts.map(([v,l]) => `<option value="${v}" ${doc.status===v?'selected':''}>${l}</option>`).join('');
+
+        html += `<tr class="row-data">
+            <td><button class="row-del" onclick="delDoc('${doc.id}')">&times;</button>
+                <input class="inp" value="${esc(doc.name)}" onchange="updDoc('${doc.id}','name',this.value)" style="font-weight:500;min-width:140px"></td>
+            <td><input class="inp" value="${esc(doc.caseNum)}" onchange="updDoc('${doc.id}','caseNum',this.value)" style="min-width:100px;color:var(--text-dim)"></td>
+            <td><select class="status-sel" style="color:var(--accent-blue)" onchange="updDoc('${doc.id}','status',this.value)">${selHtml}</select></td>
+            <td><input class="inp ${dlClass}" type="date" value="${doc.deadline||''}" onchange="updDoc('${doc.id}','deadline',this.value)" style="min-width:110px"></td>
+        </tr>`;
+    });
+
+    html += '</tbody></table>';
+    html += '<div class="add-row-area"><button class="add-row-btn" onclick="addDoc()">+ Добавить документ</button></div>';
+    html += '</div>';
+    c.innerHTML = html;
+}
+
+function addDoc() {
+    D.docs.unshift({ id: uid(), name: '', caseNum: '', status: 'draft', deadline: '' });
+    save(); renderDocs();
+}
+
+function updDoc(id, f, v) {
+    const d = D.docs.find(x => x.id === id);
+    if (d) { d[f] = v; save(); }
+}
+
+function delDoc(id) { D.docs = D.docs.filter(x => x.id !== id); save(); renderDocs(); }
+
+// === NOTES ===
+function renderNotes() {
+    const c = document.getElementById('notesContainer');
+    let html = '';
+
+    D.notes.forEach(n => {
+        html += `<div class="note-card">
+            <div class="note-header">
+                <input class="note-title" value="${esc(n.title)}" placeholder="Заголовок" onchange="updNote('${n.id}','title',this.value)">
+                <span class="note-date">${n.date||''}</span>
+                <button class="btn btn-icon btn-sm btn-danger" onclick="delNote('${n.id}')" style="width:24px;height:24px;font-size:12px">&times;</button>
+            </div>
+            <textarea class="note-body" placeholder="Текст заметки..." onchange="updNote('${n.id}','body',this.value)" oninput="autoGrow(this)">${esc(n.body)}</textarea>
+        </div>`;
+    });
+
+    c.innerHTML = html;
+
+    c.querySelectorAll('.note-body').forEach(autoGrow);
+}
+
+function addNote() {
+    D.notes.unshift({ id: uid(), title: '', date: today(), body: '' });
+    save(); renderNotes();
+}
+
+function updNote(id, f, v) {
+    const n = D.notes.find(x => x.id === id);
+    if (n) { n[f] = v; save(); }
+}
+
+function delNote(id) { D.notes = D.notes.filter(x => x.id !== id); save(); renderNotes(); }
+
+function autoGrow(el) {
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+}
+
+// === EXPORT / IMPORT ===
+function exportData() {
+    const blob = new Blob([JSON.stringify(D, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `lawyer_${today()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function importData() { document.getElementById('importInput').click(); }
+
+function handleImport(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        try {
+            const data = JSON.parse(ev.target.result);
+            D = data;
+            save(); renderAll();
+        } catch(err) { alert('Ошибка чтения файла'); }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+function showModal(html) {
+    const ov = document.getElementById('modalOverlay');
+    ov.innerHTML = '<div class="modal">' + html + '</div>';
+    ov.classList.add('active');
+}
+
+function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('active');
+}
+
+function renderAll() {
+    renderCases();
+    renderCalendar();
+    renderBilling();
+    renderDocs();
+    renderNotes();
+}
+
+load();
+renderAll();
+</script>
+</body>
+</html>

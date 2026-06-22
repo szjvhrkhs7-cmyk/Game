@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayDigest — Правовые статьи</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --surface: #1a1d27;
+            --surface-hover: #222632;
+            --border: #2a2e3b;
+            --accent: #6c5ce7;
+            --accent-light: #a29bfe;
+            --text: #e4e6eb;
+            --text-muted: #8b8fa3;
+            --tag-cbdc: #a29bfe;
+            --tag-payments: #00b894;
+            --tag-crypto: #0984e3;
+            --tag-ecom: #00cec9;
+            --tag-banking: #fd79a8;
+            --tag-intl: #fdcb6e;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a1d27 0%, #1b2d69 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 2rem 1rem;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #a29bfe, #6c5ce7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+        .header p { color: var(--text-muted); font-size: 1rem; max-width: 600px; margin: 0 auto; }
+        .update-info {
+            display: inline-block;
+            margin-top: 1rem;
+            padding: 0.4rem 1rem;
+            background: rgba(108, 92, 231, 0.15);
+            border: 1px solid rgba(108, 92, 231, 0.3);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: var(--accent-light);
+        }
+        .nav {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1.2rem;
+        }
+        .nav a {
+            color: var(--text);
+            text-decoration: none;
+            padding: 0.5rem 1.2rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .nav a:hover, .nav a.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem; }
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--accent-light);
+            margin: 2rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .section-title::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 22px;
+            background: var(--accent);
+            border-radius: 2px;
+        }
+        .article-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.4rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.2s;
+        }
+        .article-card:hover {
+            background: var(--surface-hover);
+            border-color: var(--accent);
+            transform: translateX(4px);
+        }
+        .article-card .tags { display: flex; gap: 0.4rem; margin-bottom: 0.6rem; flex-wrap: wrap; }
+        .tag {
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.15rem 0.6rem;
+            border-radius: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .tag-cbdc { background: rgba(108, 92, 231, 0.2); color: var(--tag-cbdc); }
+        .tag-payments { background: rgba(0, 184, 148, 0.2); color: var(--tag-payments); }
+        .tag-crypto { background: rgba(9, 132, 227, 0.2); color: var(--tag-crypto); }
+        .tag-ecom { background: rgba(0, 206, 201, 0.2); color: var(--tag-ecom); }
+        .tag-banking { background: rgba(253, 121, 168, 0.2); color: var(--tag-banking); }
+        .tag-intl { background: rgba(253, 203, 110, 0.2); color: var(--tag-intl); }
+        .article-card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; line-height: 1.4; }
+        .article-card h3 a { color: var(--text); text-decoration: none; }
+        .article-card h3 a:hover { color: var(--accent-light); }
+        .article-card .summary { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.6rem; }
+        .article-card .meta { font-size: 0.8rem; color: var(--accent-light); }
+        .article-card .meta a { color: var(--accent-light); text-decoration: none; }
+        .article-card .meta a:hover { text-decoration: underline; }
+        .intro-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.2rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        .footer {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border);
+        }
+        .footer a { color: var(--accent-light); text-decoration: none; }
+        @media (max-width: 600px) {
+            .header h1 { font-size: 1.6rem; }
+            .article-card { padding: 1rem; }
+            .nav { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>PayDigest / Право</h1>
+    <p>Правовые статьи и аналитика в сфере банковского и платёжного права</p>
+    <div class="update-info">Обновлено: 22 июня 2026</div>
+    <div class="nav">
+        <a href="paydigest.html">Новости</a>
+        <a href="legal.html" class="active">Правовые статьи</a>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="intro-box">
+        Подборка правовых статей и аналитических материалов по вопросам банковского права, регулирования платёжных услуг, цифровых валют и электронной коммерции. Все ссылки ведут на оригинальные публикации.
+    </div>
+
+    <!-- Цифровой рубль -->
+    <div class="section-title">Цифровой рубль: правовой статус и регулирование</div>
+
+    <div class="article-card">
+        <div class="tags">
+            <span class="tag tag-cbdc">CBDC</span>
+            <span class="tag tag-banking">Банковское право</span>
+        </div>
+        <h3><a href="https://www.consultant.ru/law/hotdocs/90109.html" target="_blank" rel="noopener">С 1 сентября 2026 года вступает в силу закон о поэтапном внедрении цифрового рубля</a></h3>
+        <p class="summary">Детальный правовой обзор закона № 248-ФЗ от 23.07.2025: сроки, обязательства банков и бизнеса, критерии выручки для подключения (120 млн → 30 млн → все), комиссии и переходные периоды.</p>
+        <div class="meta">Источник: <a href="https://www.consultant.ru/law/hotdocs/90109.html" target="_blank" rel="noopener">КонсультантПлюс</a></div>
+    </div>
+
+    <div class="article-card">
+        <div class="tags">
+            <span class="tag tag-cbdc">CBDC</span>
+            <span class="tag tag-payments">Платёжное право</span>
+        </div>
+        <h3><a href="https://www.law.ru/article/27970-chto-takoe-tsifrovoy-rubl-v-rossii-vnedrenie-v-2023-godu" target="_blank" rel="noopener">Цифровой рубль: правовое определение, статус и внедрение</a></h3>
+        <p class="summary">Анализ правовой природы цифрового рубля. Это не отдельная валюта, а третья форма рубля наряду с наличной и безналичной. Обязательства ЦБ как оператора платформы перед пользователями.</p>
+        <div class="meta">Источник: <a href="https://www.law.ru/article/27970-chto-takoe-tsifrovoy-rubl-v-rossii-vnedrenie-v-2023-godu" target="_blank" rel="noopener">Право.ру</a></div>
+    </div>
+
+    <div class="article-card">
+        <div class="tags">
+            <span class="tag tag-cbdc">CBDC</span>
+        </div>
+        <h3><a href="https://legascom.ru/notes/10500-tsifrovoj-rubl-perspektivy-pravovoe-regulirovanie-i-riski" target="_blank" rel="noopener">Цифровой рубль: перспективы, правовое регулирование и риски</a></h3>
+        <p class="summary">Юридический анализ рисков внедрения: вопросы банковской тайны, защиты персональных данных, ответственности оператора и правовой неопределённости в трансграничных операциях.</p>
+        <div class="meta">Источник: <a href="https://legascom.ru/notes/10500-tsifrovoj-rubl-perspektivy-pravovoe-regulirovanie-i-riski" target="_blank" rel="noopener">ЛЕГАС</a></div>
+    </div>
+
+    <div class="article-card">
+        <div class="tags">
+            <span class="tag tag-cbdc">CBDC</span>
+            <span class="tag tag-payments">Платёжное право</span>
+        </div>
+        <h3><a href="https://www.fd.ru/articles/163674-cifrovoy-rubl-rossiya-2026" target="_blank" rel="noopener">Цифровой рубль с 1 сентября 2026 года: всё что надо знать</a></h3>
+        <p class="summary">Комплексный обзор: правовая база (законы 340-ФЗ и 339-ФЗ), техтребования к банкам, сценарии подключения бизнеса, универсальный QR-код НСПК, комиссии от 01.01.2027.</p>
+        <div class="meta">Источник: <a href="https://www.fd.ru/articles/163674-cifrovoy-rubl-rossiya-2026" target="_blank" rel="noopener">Финансовый директор</a></div>
+    </div>
+
+    <!-- Платёжное право -->
+    <div class="section-title">Регулирование платёжных услуг</div>
+
+    <div class="article-card">
+        <div class="tags">
+            <span class="tag tag-payments">Платёжное право</span>
+            <span class="tag tag-banking">Банковское право</span>
+        </div>
+        <h3><a href="https://www.cbr.ru/Psystem/" target="_blank" rel="noopener">Основные направления развития национальной платёжной системы до 2027 года</a></h3>
+        <p class="summary">Стратегический документ ЦБ: приоритеты развития СБП, универсальный QR-код, расширение карты «Мир» за рубежом, интеграция цифрового рубля в платёжную инфраструктуру.</p>
+        <div class="meta">Источник: <a href="https://www.cbr.ru/Psystem/" target="_blank" rel="noopener">Банк России</a></div>
+    </div>
+
+    <div class="article-card">
+        <div class="tags">
+            <span class="tag tag-payments">Платёжное право</span>
+        </div>
+        <h3><a href="https://riapravo.ru/novosti-prava/universalnyj-platjozhnyj-kod-kak-izmenyatsya-raschjoty-s-1-sentyabrya-2026-goda/" target="_blank" rel="noopener">Универсальный платёжный код: правовая основа новой системы расчётов</a></h3>
+        <p class="summary">Правовой анализ механизма универсального QR-кода, объединяющего СБП, цифровой рубль и банковские карты. Нормативная база, обязанности ТСП, переходные положения.</p>
+        <div class="meta">Источник: <a href="https://riapravo.ru/novosti-prava/universalnyj-platjozhnyj-kod-kak-izmenyatsya-raschjoty-s-1-sentyabrya-2026-goda/" target="_blank" rel="noopener">РИА Право</a></div>
+    </div>
+
+    <div class="article-card">
+        <div class="tags">
+            <span class="tag tag-payments">Платёжное право</span>
+        </div>
+        <h3><a href="https://www.vedomosti.ru/press_releases/2026/02/12/bankovskie-platezhnie-agenti-perspektivi-zakonodatelnih-izmenenii" target="_blank" rel="noopener">Банковские платёжные агенты: перспективы законодательных изменений</a></h3>
+        <p class="summary">Анализ правового статуса банковских платёжных агентов, планируемые изменения в 161-ФЗ «О национальной платёжной системе», расширение функций и ответственности.</p>
+        <div class="meta">Источник: <a href="https://www.vedomosti.ru/press_releases/2026/02/12/bankovskie-platezhnie-agenti-perspektivi-zakonodatelnih-izmenenii" target="_blank" rel="noopener">Ведомости</a></div>
+    </div>
+
+    <div class="article-card">
+        <div class="tags">
+            <span class="tag tag-payments">Платёжное право</span>
+        </div>
+        <h3><a href="https://pay.yandex.ru/blog/articles/formy-beznalichnyh-raschetov-gid" target="_blank" rel="noopener">Формы безналичных расчётов 2026: полный гид</a></h3>
+        <p class="summary">Обзор всех форм безналичных расчётов по ГК РФ ст. 862: платёжные поручения, аккредитивы, инкассо, чеки, электронные средства платежа. Практические рекомендации для бизнеса.</p>
+        <div class="meta">Источник: <a href="https://pay.yandex.ru/blog/articles/formy-beznalichnyh-raschetov-gid" target="_blank" rel="noopener">Яндекс Пэй</a></div>
+    </div>
+
+    <!-- Криптовалюты -->
+    <div class="section-title">Правовое регулирование криптовалют и ЦФА</div>
+
+    <div class="article-card">
+        <div class="tags">
+            <span class="tag tag-crypto">Крипто</span>
+            <span class="tag tag-banking">Банковское право</span>
+        </div>
+        <h3><a href="https://iidx.ru/blog/zakon-o-cifrovoy-valyute-2026-kriptobirzhi-rossiya/" target="_blank" rel="noopener">Закон о криптовалюте 2026 в России: требования к криптобиржам, KYC/AML, лицензирование</a></h3>
+        <p class="summary">Подробный разбор пакета законопроектов «О цифровой валюте и цифровых правах»: четырёхуровневая система надзора, обязательная идентификация, роль ЦБ и ФНС.</p>
+        <div class="meta">Источник: <a href="https://iidx.ru/blog/zakon-o-cifrovoy-valyute-2026-kriptobirzhi-rossiya/" target="_blank" rel="noopener">IIDX</a></div>
+    </div>
+
+    <div class="article-card">
+        <div class="tags">
+            <span class="tag tag-crypto">Крипто</span>
+        </div>
+        <h3><a href="https://companies.rbc.ru/news/3EYjqdhbni/kriptovalyuta-v-rossii-v-2026-godu-novyie-pravila-ogranicheniya-i-riski/" target="_blank" rel="noopener">Криптовалюта в России в 2026 году: новые правила, ограничения и риски</a></h3>
+        <p class="summary">Комплексный обзор: запрет крипты как средства платежа внутри страны, легализация расчётов по ВЭД, механизм блокировки Росфинмониторинга, будущий запрет P2P с 2027.</p>
+        <div class="meta">Источник: <a href="https://companies.rbc.ru/news/3EYjqdhbni/kriptovalyuta-v-rossii-v-2026-godu-novyie-pravila-ogranicheniya-i-riski/" target="_blank" rel="noopener">РБК</a></div>
+    </div>
+
+    <div class="article-card">
+        <div class="tags">
+            <span class="tag tag-crypto">Крипто</span>
+        </div>
+        <h3><a href="https://www.law.ru/article/23026-zakon-o-tsifrovyh-finansovyh-aktivah" target="_blank" rel="noopener">Цифровые финансовые активы и цифровая валюта: правовой режим в России</a></h3>
+        <p class="summary">Анализ закона 259-ФЗ о ЦФА: разграничение ЦФА и цифровых валют, права владельцев, налогообложение, судебная практика по спорам с криптоактивами.</p>
+        <div class="meta">Источник: <a href="https://www.law.ru/article/23026-zakon-o-tsifrovyh-finansovyh-aktivah" target="_blank" rel="noopener">Право.ру</a></div>
+    </div>
+
+    <!-- Электронная коммерция -->
+    <div class="section-title">Регулирование электронной коммерции</div>
+
+    <div class="article-card">
+        <div class="tags">
+            <span class="tag tag-ecom">E-commerce</span>
+        </div>
+        <h3><a href="https://www.consultant.ru/document/cons_doc_LAW_519660/5606bd0e3bad946078ddc36832defc5b2b8fb960/" target="_blank" rel="noopener">Закон о платформенной экономике: обзор ФЗ-289 и сопутствующих изменений</a></h3>
+        <p class="summary">Юридический обзор КонсультантПлюс: вступление в силу 1 октября 2026, обязанности операторов платформ, проверка продавцов через госреестры, раскрытие алгоритмов ранжирования.</p>
+        <div class="meta">Источник: <a href="https://www.consultant.ru/document/cons_doc_LAW_519660/5606bd0e3bad946078ddc36832defc5b2b8fb960/" target="_blank" rel="noopener">КонсультантПлюс</a></div>
+    </div>
+
+    <div class="article-card">
+        <div class="tags">
+            <span class="tag tag-ecom">E-commerce</span>
+        </div>
+        <h3><a href="https://www.kommersant.ru/doc/8341422" target="_blank" rel="noopener">Новый закон о платформенной экономике: изменения для маркетплейсов и продавцов</a></h3>
+        <p class="summary">Анализ закона: уведомление об изменении комиссий за 45 дней, ежемесячная передача данных в ФНС, обязанность проверять маркировку, создание реестра платформ Минэкономразвития.</p>
+        <div class="meta">Источник: <a href="https://www.kommersant.ru/doc/8341422" target="_blank" rel="noopener">Коммерсантъ</a></div>
+    </div>
+
+    <div class="article-card">
+        <div class="tags">
+            <span class="tag tag-ecom">E-commerce</span>
+            <span class="tag tag-payments">Платёжное право</span>
+        </div>
+        <h3><a href="https://www.consultant.ru/law/podborki/pravovoe_regulirovanie_jelektronnoj_kommercii/" target="_blank" rel="noopener">Правовое регулирование электронной коммерции: подборка актов и документов</a></h3>
+        <p class="summary">Систематизированная подборка нормативных актов, регулирующих электронную коммерцию в России: от закона о защите прав потребителей до правил дистанционной торговли.</p>
+        <div class="meta">Источник: <a href="https://www.consultant.ru/law/podborki/pravovoe_regulirovanie_jelektronnoj_kommercii/" target="_blank" rel="noopener">КонсультантПлюс</a></div>
+    </div>
+
+    <!-- Международное регулирование -->
+    <div class="section-title">Международное платёжное и банковское право</div>
+
+    <div class="article-card">
+        <div class="tags">
+            <span class="tag tag-intl">Международное</span>
+            <span class="tag tag-payments">Платёжное право</span>
+        </div>
+        <h3><a href="https://www.mofo.com/resources/insights/260430-psd3-and-the-payment-services-regulation-key-developments" target="_blank" rel="noopener">PSD3 и Payment Services Regulation: ключевые изменения и сроки</a></h3>
+        <p class="summary">Обзор финального текста PSD3/PSR: BNPL — кредитный продукт, open banking для проверки займов от 100 евро, новые требования к авторизации и SCA, ответственность за мошенничество.</p>
+        <div class="meta">Источник: <a href="https://www.mofo.com/resources/insights/260430-psd3-and-the-payment-services-regulation-key-developments" target="_blank" rel="noopener">Morrison Foerster</a></div>
+    </div>
+
+    <div class="article-card">
+        <div class="tags">
+            <span class="tag tag-intl">Международное</span>
+            <span class="tag tag-crypto">Крипто</span>
+        </div>
+        <h3><a href="https://hacken.io/discover/mica-regulation/" target="_blank" rel="noopener">MiCA Regulation: что должны знать криптопроекты о комплаенсе в 2026</a></h3>
+        <p class="summary">Практическое руководство по MiCA: классификация токенов (ART, EMT, другие), требования к лицензированию, white paper, резервные активы для стейблкоинов, дедлайн 1 июля 2026.</p>
+        <div class="meta">Источник: <a href="https://hacken.io/discover/mica-regulation/" target="_blank" rel="noopener">Hacken</a></div>
+    </div>
+
+    <div class="article-card">
+        <div class="tags">
+            <span class="tag tag-intl">Международное</span>
+            <span class="tag tag-banking">Банковское право</span>
+        </div>
+        <h3><a href="https://www.womblebonddickinson.com/uk/insights/articles-and-briefings/10-financial-regulatory-changes-2026" target="_blank" rel="noopener">10 ключевых изменений в финансовом регулировании 2026 года</a></h3>
+        <p class="summary">Обзор от Womble Bond Dickinson: DORA в ЕС, регулирование BNPL в Великобритании с 15 июля, digital identity wallets по eIDAS 2.0, стейблкоины по MiCA, Genius Act в США.</p>
+        <div class="meta">Источник: <a href="https://www.womblebonddickinson.com/uk/insights/articles-and-briefings/10-financial-regulatory-changes-2026" target="_blank" rel="noopener">Womble Bond Dickinson</a></div>
+    </div>
+
+    <div class="article-card">
+        <div class="tags">
+            <span class="tag tag-intl">Международное</span>
+        </div>
+        <h3><a href="https://www.freshfields.com/en/our-thinking/blogs/risk-and-compliance/psd3-psr-what-the-eus-new-payments-rules-mean-for-your-business-102mrom" target="_blank" rel="noopener">PSD3/PSR: что новые правила ЕС означают для бизнеса</a></h3>
+        <p class="summary">Анализ Freshfields: PSD3 регулирует авторизацию и надзор платёжных институтов, PSR — правила проведения платежей, SCA, open banking и ответственность за несанкционированные транзакции.</p>
+        <div class="meta">Источник: <a href="https://www.freshfields.com/en/our-thinking/blogs/risk-and-compliance/psd3-psr-what-the-eus-new-payments-rules-mean-for-your-business-102mrom" target="_blank" rel="noopener">Freshfields</a></div>
+    </div>
+
+    <div class="article-card">
+        <div class="tags">
+            <span class="tag tag-intl">Международное</span>
+            <span class="tag tag-payments">Платёжное право</span>
+        </div>
+        <h3><a href="https://bvnk.com/blog/global-stablecoin-regulations-2026" target="_blank" rel="noopener">Глобальное регулирование стейблкоинов 2026: что нужно знать бизнесу</a></h3>
+        <p class="summary">Сравнительный обзор регулирования стейблкоинов: MiCA (ЕС), Genius Act (США), FSMB (Великобритания), MAS (Сингапур). Практические требования к эмитентам и провайдерам.</p>
+        <div class="meta">Источник: <a href="https://bvnk.com/blog/global-stablecoin-regulations-2026" target="_blank" rel="noopener">BVNK</a></div>
+    </div>
+
+</div>
+
+<div class="footer">
+    <p>PayDigest &copy; 2026 &mdash; Правовые статьи банковского и платёжного права</p>
+    <p style="margin-top: 0.5rem;">Все материалы принадлежат их авторам. Мы публикуем только аннотации со ссылками на оригиналы.</p>
+    <p style="margin-top: 0.5rem;"><a href="paydigest.html">Вернуться к новостям</a></p>
+</div>
+
+</body>
+</html>

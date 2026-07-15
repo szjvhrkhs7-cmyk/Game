@@ -36,10 +36,10 @@
     const id = itemId(item);
     return `<article class="story-card ${item.featured && index === 0 ? 'featured' : ''}">
       <div class="card-top"><div class="card-tags">${item.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}</div><button class="bookmark ${saved.has(id) ? 'is-saved' : ''}" type="button" data-save="${id}" aria-label="${saved.has(id) ? 'Удалить из сохраненных' : 'Сохранить материал'}">${saved.has(id) ? '★' : '☆'}</button></div>
-      <h3><a href="${item.url}" target="_blank" rel="noopener noreferrer" aria-label="${item.title} — открыть первоисточник">${item.title} <span class="title-arrow" aria-hidden="true">↗</span></a></h3>
+      <h3><a href="${item.url}" target="_blank" rel="noopener noreferrer" aria-label="${item.title} — открыть источник">${item.title} <span class="title-arrow" aria-hidden="true">↗</span></a></h3>
       <p class="summary">${item.summary}</p>
-      <a class="impact" href="${item.url}" target="_blank" rel="noopener noreferrer" aria-label="Аналитика к материалу «${item.title}» — открыть первоисточник"><b>Почему это важно · аналитика</b><span>${item.impact}</span><strong>К первоисточнику ↗</strong></a>
-      <div class="card-footer"><span>${item.date}</span><a href="${item.url}" target="_blank" rel="noopener noreferrer" aria-label="Открыть первоисточник: ${item.source}">${item.source} · Первоисточник ↗</a></div>
+      <a class="impact" href="${item.url}" target="_blank" rel="noopener noreferrer" aria-label="Аналитика к материалу «${item.title}» — открыть источник"><b>Почему это важно · аналитика</b><span>${item.impact}</span><strong>Открыть источник ↗</strong></a>
+      <div class="card-footer"><span>${item.date}</span><a href="${item.url}" target="_blank" rel="noopener noreferrer" aria-label="Открыть источник: ${item.source}">${item.source} · Источник ↗</a></div>
     </article>`;
   }
 

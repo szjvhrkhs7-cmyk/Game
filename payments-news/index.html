@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f4f2ed">
+  <meta name="description" content="PayDigest — проверенные новости, правовая аналитика и рыночные сигналы в платежах и искусственном интеллекте.">
+  <title>PayDigest — платежи, право и ИИ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="data.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">К материалам</a>
+  <header class="site-header">
+    <a class="brand" href="#payments" aria-label="PayDigest, на главную">
+      <span class="brand-mark" aria-hidden="true">P</span>
+      <span>PayDigest</span>
+    </a>
+    <nav class="primary-nav" aria-label="Разделы">
+      <button class="nav-link is-active" data-section="payments">Платежи</button>
+      <button class="nav-link" data-section="law">Право</button>
+      <button class="nav-link" data-section="ai">ИИ</button>
+    </nav>
+    <button class="icon-button" id="themeToggle" type="button" aria-label="Переключить цветовую тему">
+      <span aria-hidden="true">◐</span>
+    </button>
+  </header>
+
+  <main id="content">
+    <section class="hero" aria-labelledby="pageTitle">
+      <p class="eyebrow">Профессиональный радар · 15 июля 2026</p>
+      <h1 id="pageTitle">Сигналы, которые<br><em>двигают рынок.</em></h1>
+      <p class="hero-copy">Короткая редакционная подборка о платежах, регулировании и ИИ. Только первоисточники и проверенные публикации, плюс практический вывод для рынка.</p>
+      <div class="hero-meta" aria-label="Параметры подборки">
+        <span><b id="materialCount">0</b> материалов</span>
+        <span>3 направления</span>
+        <span>чтение ≈ 12 минут</span>
+      </div>
+    </section>
+
+    <section class="pulse" aria-labelledby="pulseTitle">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Редакционный вывод</p>
+          <h2 id="pulseTitle">Пульс рынка</h2>
+        </div>
+        <p>Сводка построена на материалах текущего выпуска и не является инвестиционной рекомендацией.</p>
+      </div>
+      <div class="pulse-grid">
+        <article class="pulse-card pulse-payments">
+          <div class="pulse-top"><span>Платежи</span><b>Инфраструктура</b></div>
+          <p class="pulse-value">Стейблкоины становятся платежным рельсом</p>
+          <p>Карточные сети, банки и финтехи переходят от экспериментов к кошелькам, расчетам и регулируемой инфраструктуре. Конкуренция смещается к владению маршрутом платежа.</p>
+        </article>
+        <article class="pulse-card pulse-ai">
+          <div class="pulse-top"><span>ИИ</span><b>Продуктивность</b></div>
+          <p class="pulse-value">Агенты выходят из чата в рабочие процессы</p>
+          <p>Цена интеллекта снижается, а ценность перемещается в интеграцию, надежность и доступ к корпоративным данным. Побеждают продукты, которые завершают работу, а не только отвечают.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="feed" aria-labelledby="feedTitle">
+      <div class="section-heading feed-heading">
+        <div>
+          <p class="eyebrow" id="sectionEyebrow">Рынок платежей</p>
+          <h2 id="feedTitle">Последние события</h2>
+        </div>
+        <label class="search-wrap">
+          <span class="sr-only">Поиск по материалам</span>
+          <input id="searchInput" type="search" placeholder="Поиск" autocomplete="off">
+          <kbd>⌘ K</kbd>
+        </label>
+      </div>
+      <div class="filters" id="filters" aria-label="Фильтры материалов"></div>
+      <div class="result-meta"><span id="resultCount"></span><button id="clearFilters" type="button">Сбросить фильтры</button></div>
+      <div class="card-grid" id="cardGrid" aria-live="polite"></div>
+      <div class="empty-state" id="emptyState" hidden>
+        <p>Ничего не найдено</p>
+        <span>Попробуйте другой запрос или сбросьте фильтры.</span>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div><span class="brand-mark" aria-hidden="true">P</span><b>PayDigest</b></div>
+    <p>Аннотации со ссылками на оригиналы. Даты и формулировки проверены на 15 июля 2026 года.</p>
+    <a href="#payments">Наверх ↑</a>
+  </footer>
+</body>
+</html>

@@ -2,7 +2,9 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [gh-pages]
+    branches:
+      - gh-pages
+      - claude/mario-maker-style-game-7p670u
   workflow_dispatch:
 
 permissions:

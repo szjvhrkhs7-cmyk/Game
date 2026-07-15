@@ -1,672 +1,95 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PayDigest — Новости платёжной индустрии</title>
-    <style>
-        :root {
-            --bg: #0f1117;
-            --surface: #1a1d27;
-            --surface-hover: #222632;
-            --border: #2a2e3b;
-            --accent: #6c5ce7;
-            --accent-light: #a29bfe;
-            --text: #e4e6eb;
-            --text-muted: #8b8fa3;
-            --tag-russia: #e17055;
-            --tag-world: #00b894;
-            --tag-law: #fdcb6e;
-            --tag-crypto: #0984e3;
-            --tag-fintech: #e84393;
-            --tag-ecom: #00cec9;
-            --tag-banking: #fd79a8;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
-        }
-        .header {
-            background: linear-gradient(135deg, #1a1d27 0%, #2d1b69 100%);
-            border-bottom: 1px solid var(--border);
-            padding: 2rem 1rem;
-            text-align: center;
-        }
-        .header h1 {
-            font-size: 2.2rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #a29bfe, #6c5ce7);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 0.5rem;
-        }
-        .header p { color: var(--text-muted); font-size: 1rem; max-width: 600px; margin: 0 auto; }
-        .update-info {
-            display: inline-block;
-            margin-top: 1rem;
-            padding: 0.4rem 1rem;
-            background: rgba(108, 92, 231, 0.15);
-            border: 1px solid rgba(108, 92, 231, 0.3);
-            border-radius: 20px;
-            font-size: 0.85rem;
-            color: var(--accent-light);
-        }
-        .nav {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            margin-top: 1.2rem;
-        }
-        .nav a {
-            color: var(--text);
-            text-decoration: none;
-            padding: 0.5rem 1.2rem;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            font-size: 0.9rem;
-            transition: all 0.2s;
-        }
-        .nav a:hover, .nav a.active {
-            background: var(--accent);
-            border-color: var(--accent);
-            color: white;
-        }
-        .container { max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem; }
-        .filters {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border);
-        }
-        .filter-btn {
-            padding: 0.4rem 1rem;
-            border-radius: 20px;
-            border: 1px solid var(--border);
-            background: var(--surface);
-            color: var(--text-muted);
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: all 0.2s;
-        }
-        .filter-btn:hover, .filter-btn.active {
-            background: var(--accent);
-            color: white;
-            border-color: var(--accent);
-        }
-        .date-section { margin-bottom: 2rem; }
-        .date-header {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--accent-light);
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .date-header::before {
-            content: '';
-            display: inline-block;
-            width: 4px;
-            height: 20px;
-            background: var(--accent);
-            border-radius: 2px;
-        }
-        .news-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.2rem;
-            margin-bottom: 0.75rem;
-            transition: all 0.2s;
-        }
-        .news-card:hover {
-            background: var(--surface-hover);
-            border-color: var(--accent);
-            transform: translateX(4px);
-        }
-        .news-card .tags { display: flex; gap: 0.4rem; margin-bottom: 0.6rem; flex-wrap: wrap; }
-        .tag {
-            font-size: 0.7rem;
-            font-weight: 600;
-            padding: 0.15rem 0.6rem;
-            border-radius: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .tag-russia { background: rgba(225, 112, 85, 0.2); color: var(--tag-russia); }
-        .tag-world { background: rgba(0, 184, 148, 0.2); color: var(--tag-world); }
-        .tag-law { background: rgba(253, 203, 110, 0.2); color: var(--tag-law); }
-        .tag-crypto { background: rgba(9, 132, 227, 0.2); color: var(--tag-crypto); }
-        .tag-fintech { background: rgba(232, 67, 147, 0.2); color: var(--tag-fintech); }
-        .tag-cbdc { background: rgba(108, 92, 231, 0.2); color: var(--accent-light); }
-        .tag-ecom { background: rgba(0, 206, 201, 0.2); color: var(--tag-ecom); }
-        .tag-banking { background: rgba(253, 121, 168, 0.2); color: var(--tag-banking); }
-        .news-card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; line-height: 1.4; }
-        .news-card h3 a { color: var(--text); text-decoration: none; }
-        .news-card h3 a:hover { color: var(--accent-light); }
-        .news-card .summary { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.6rem; }
-        .news-card .source { font-size: 0.8rem; color: var(--accent-light); }
-        .news-card .source a { color: var(--accent-light); text-decoration: none; }
-        .news-card .source a:hover { text-decoration: underline; }
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
-        }
-        .stat-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 1rem;
-            text-align: center;
-        }
-        .stat-card .number { font-size: 1.5rem; font-weight: 700; color: var(--accent-light); }
-        .stat-card .label { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem; }
-        .footer {
-            text-align: center;
-            padding: 2rem 1rem;
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            border-top: 1px solid var(--border);
-        }
-        .footer a { color: var(--accent-light); text-decoration: none; }
-        @media (max-width: 600px) {
-            .header h1 { font-size: 1.6rem; }
-            .news-card { padding: 1rem; }
-            .stats { grid-template-columns: repeat(2, 1fr); }
-            .nav { flex-wrap: wrap; }
-        }
-        .hidden { display: none; }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f4f2ed">
+  <meta name="description" content="PayDigest — проверенные новости, правовая аналитика и рыночные сигналы в платежах и искусственном интеллекте.">
+  <title>PayDigest — платежи, право и ИИ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="data.js" defer></script>
+  <script src="app.js" defer></script>
 </head>
 <body>
+  <a class="skip-link" href="#content">К материалам</a>
+  <header class="site-header">
+    <a class="brand" href="#payments" aria-label="PayDigest, на главную">
+      <span class="brand-mark" aria-hidden="true">P</span>
+      <span>PayDigest</span>
+    </a>
+    <nav class="primary-nav" aria-label="Разделы">
+      <button class="nav-link is-active" data-section="payments">Платежи</button>
+      <button class="nav-link" data-section="law">Право</button>
+      <button class="nav-link" data-section="ai">ИИ</button>
+    </nav>
+    <button class="icon-button" id="themeToggle" type="button" aria-label="Переключить цветовую тему">
+      <span aria-hidden="true">◐</span>
+    </button>
+  </header>
 
-<div class="header">
-    <h1>PayDigest</h1>
-    <p>Новости платёжной индустрии, банковского права и электронной коммерции</p>
-    <div class="update-info">Обновлено: 30 июня 2026</div>
-    <div class="nav">
-        <a href="paydigest.html" class="active">Новости</a>
-        <a href="legal.html">Правовые статьи</a>
-    </div>
-</div>
+  <main id="content">
+    <section class="hero" aria-labelledby="pageTitle">
+      <p class="eyebrow">Профессиональный радар · 15 июля 2026</p>
+      <h1 id="pageTitle">Сигналы, которые<br><em>двигают рынок.</em></h1>
+      <p class="hero-copy">Короткая редакционная подборка о платежах, регулировании и ИИ. Только первоисточники и проверенные публикации, плюс практический вывод для рынка.</p>
+      <div class="hero-meta" aria-label="Параметры подборки">
+        <span><b id="materialCount">0</b> материалов</span>
+        <span>3 направления</span>
+        <span>чтение ≈ 12 минут</span>
+      </div>
+    </section>
 
-<div class="container">
-
-    <div class="stats">
-        <div class="stat-card">
-            <div class="number">34</div>
-            <div class="label">Новостей</div>
+    <section class="pulse" aria-labelledby="pulseTitle">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Редакционный вывод</p>
+          <h2 id="pulseTitle">Пульс рынка</h2>
         </div>
-        <div class="stat-card">
-            <div class="number">24</div>
-            <div class="label">Источников</div>
+        <p>Сводка построена на материалах текущего выпуска и не является инвестиционной рекомендацией.</p>
+      </div>
+      <div class="pulse-grid">
+        <article class="pulse-card pulse-payments">
+          <div class="pulse-top"><span>Платежи</span><b>Инфраструктура</b></div>
+          <p class="pulse-value">Стейблкоины становятся платежным рельсом</p>
+          <p>Карточные сети, банки и финтехи переходят от экспериментов к кошелькам, расчетам и регулируемой инфраструктуре. Конкуренция смещается к владению маршрутом платежа.</p>
+        </article>
+        <article class="pulse-card pulse-ai">
+          <div class="pulse-top"><span>ИИ</span><b>Продуктивность</b></div>
+          <p class="pulse-value">Агенты выходят из чата в рабочие процессы</p>
+          <p>Цена интеллекта снижается, а ценность перемещается в интеграцию, надежность и доступ к корпоративным данным. Побеждают продукты, которые завершают работу, а не только отвечают.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="feed" aria-labelledby="feedTitle">
+      <div class="section-heading feed-heading">
+        <div>
+          <p class="eyebrow" id="sectionEyebrow">Рынок платежей</p>
+          <h2 id="feedTitle">Последние события</h2>
         </div>
-        <div class="stat-card">
-            <div class="number">8</div>
-            <div class="label">Категорий</div>
-        </div>
-        <div class="stat-card">
-            <div class="number">30</div>
-            <div class="label">Дней охват</div>
-        </div>
-    </div>
+        <label class="search-wrap">
+          <span class="sr-only">Поиск по материалам</span>
+          <input id="searchInput" type="search" placeholder="Поиск" autocomplete="off">
+          <kbd>⌘ K</kbd>
+        </label>
+      </div>
+      <div class="filters" id="filters" aria-label="Фильтры материалов"></div>
+      <div class="result-meta"><span id="resultCount"></span><button id="clearFilters" type="button">Сбросить фильтры</button></div>
+      <div class="card-grid" id="cardGrid" aria-live="polite"></div>
+      <div class="empty-state" id="emptyState" hidden>
+        <p>Ничего не найдено</p>
+        <span>Попробуйте другой запрос или сбросьте фильтры.</span>
+      </div>
+    </section>
+  </main>
 
-    <div class="filters">
-        <button class="filter-btn active" data-filter="all">Все</button>
-        <button class="filter-btn" data-filter="russia">Россия</button>
-        <button class="filter-btn" data-filter="world">Мир</button>
-        <button class="filter-btn" data-filter="law">Регулирование</button>
-        <button class="filter-btn" data-filter="banking">Банки</button>
-        <button class="filter-btn" data-filter="ecom">E-commerce</button>
-        <button class="filter-btn" data-filter="crypto">Крипто</button>
-        <button class="filter-btn" data-filter="cbdc">CBDC</button>
-        <button class="filter-btn" data-filter="fintech">Финтех</button>
-    </div>
-
-    <!-- 23-30 июня 2026 -->
-    <div class="date-section">
-        <div class="date-header">23 — 30 июня 2026</div>
-
-        <div class="news-card" data-tags="world,fintech">
-            <div class="tags">
-                <span class="tag tag-world">Мир</span>
-                <span class="tag tag-fintech">Финтех</span>
-            </div>
-            <h3><a href="https://money.onliner.by/2026/06/29/v-belarusi-poyavitsya-vozmozhnost-rasschityvatsya-po-qr-kodu" target="_blank" rel="noopener">Нацбанк Беларуси анонсировал новый платёжный сервис «Крок» с оплатой по QR-коду</a></h3>
-            <p class="summary">Сервис позволит рассчитываться по единому QR-коду между разными банками и платёжными системами страны.</p>
-            <div class="source">Источник: <a href="https://money.onliner.by/2026/06/29/v-belarusi-poyavitsya-vozmozhnost-rasschityvatsya-po-qr-kodu" target="_blank" rel="noopener">Onliner</a></div>
-        </div>
-
-        <div class="news-card" data-tags="russia,banking,law">
-            <div class="tags">
-                <span class="tag tag-russia">Россия</span>
-                <span class="tag tag-banking">Банки</span>
-                <span class="tag tag-law">Регулирование</span>
-            </div>
-            <h3><a href="https://ria.ru/20260626/putin-2101343566.html" target="_blank" rel="noopener">Путин подписал закон об ограничении числа банковских карт у одного человека</a></h3>
-            <p class="summary">Лимит — 20 карт на гражданина. Норма об ограничении вступит в силу 1 сентября 2027 года, право банков задерживать подозрительные платежи на 6 часов — раньше.</p>
-            <div class="source">Источник: <a href="https://ria.ru/20260626/putin-2101343566.html" target="_blank" rel="noopener">РИА Новости</a></div>
-        </div>
-
-        <div class="news-card" data-tags="world,crypto,law">
-            <div class="tags">
-                <span class="tag tag-world">Мир</span>
-                <span class="tag tag-crypto">Крипто</span>
-                <span class="tag tag-law">Регулирование</span>
-            </div>
-            <h3><a href="https://www.fintechfutures.com/fintech/fintech-futures-top-five-news-stories-of-the-week-26-june-2026" target="_blank" rel="noopener">Банк Англии опубликовал проект Code of Practice для системных стейблкоинов</a></h3>
-            <p class="summary">Документ описывает требования к обеспечению фунтовых стейблкоинов, включая возможность размещения резервов эмитентов на депозите в центральном банке.</p>
-            <div class="source">Источник: <a href="https://www.fintechfutures.com/fintech/fintech-futures-top-five-news-stories-of-the-week-26-june-2026" target="_blank" rel="noopener">FinTech Futures</a></div>
-        </div>
-
-        <div class="news-card" data-tags="world,fintech">
-            <div class="tags">
-                <span class="tag tag-world">Мир</span>
-                <span class="tag tag-fintech">Финтех</span>
-            </div>
-            <h3><a href="https://www.fintechfutures.com/m-a/june-2026-top-five-fintech-m-a-stories-of-the-month" target="_blank" rel="noopener">M&amp;A в платёжной индустрии: Nuvei купил Payoneer, Deluxe — Celero Commerce за $625 млн</a></h3>
-            <p class="summary">Канадский процессинговый гигант Nuvei приобрёл американский пэйтек Payoneer. Deluxe заключила сделку по покупке Celero Commerce, закрытие ожидается в III квартале 2026.</p>
-            <div class="source">Источник: <a href="https://www.fintechfutures.com/m-a/june-2026-top-five-fintech-m-a-stories-of-the-month" target="_blank" rel="noopener">FinTech Futures</a></div>
-        </div>
-
-        <div class="news-card" data-tags="world,fintech">
-            <div class="tags">
-                <span class="tag tag-world">Мир</span>
-                <span class="tag tag-fintech">Финтех</span>
-            </div>
-            <h3><a href="https://www.fintechfutures.com/paytech/june-2026-top-five-payments-stories-of-the-month" target="_blank" rel="noopener">Правительство Великобритании выбрало Adyen платёжным провайдером для GOV.UK Pay</a></h3>
-            <p class="summary">Государственная цифровая служба GDS назначила нидерландский pay-tech Adyen новым провайдером для приёма карточных и pay-by-bank платежей через портал GOV.UK Pay.</p>
-            <div class="source">Источник: <a href="https://www.fintechfutures.com/paytech/june-2026-top-five-payments-stories-of-the-month" target="_blank" rel="noopener">FinTech Futures</a></div>
-        </div>
-
-        <div class="news-card" data-tags="russia,banking">
-            <div class="tags">
-                <span class="tag tag-russia">Россия</span>
-                <span class="tag tag-banking">Банки</span>
-            </div>
-            <h3><a href="https://finance.mail.ru/article/rossijskie-banki-poka-ne-toropyatsya-massovo-menyat-usloviya-po-ipoteke-69214403/" target="_blank" rel="noopener">ЦБ РФ снизил ключевую ставку до 14,25% — девятое снижение подряд</a></h3>
-            <p class="summary">Несмотря на смягчение денежно-кредитной политики, банки пока не спешат массово пересматривать условия по рыночной ипотеке.</p>
-            <div class="source">Источник: <a href="https://finance.mail.ru/article/rossijskie-banki-poka-ne-toropyatsya-massovo-menyat-usloviya-po-ipoteke-69214403/" target="_blank" rel="noopener">Mail Финансы</a></div>
-        </div>
-    </div>
-
-    <!-- 22 июня 2026 -->
-    <div class="date-section">
-        <div class="date-header">22 июня 2026</div>
-
-        <div class="news-card" data-tags="russia,fintech">
-            <div class="tags">
-                <span class="tag tag-russia">Россия</span>
-                <span class="tag tag-fintech">Финтех</span>
-            </div>
-            <h3><a href="https://www.finversia.ru/news/markets/rynok-platezhnykh-sistem-v-rossii-v-2026-g-mozhet-prevysit-84-mlrd-rublei-168431" target="_blank" rel="noopener">Рынок платёжных систем в России может превысить 84 млрд рублей в 2026 году</a></h3>
-            <p class="summary">Рынок электронных платёжных систем и агрегаторов платежей (без учёта НСПК и СБП) за последние 5 лет показывал среднегодовой темп роста свыше 25%.</p>
-            <div class="source">Источник: <a href="https://www.finversia.ru/news/markets/rynok-platezhnykh-sistem-v-rossii-v-2026-g-mozhet-prevysit-84-mlrd-rublei-168431" target="_blank" rel="noopener">Finversia</a></div>
-        </div>
-
-        <div class="news-card" data-tags="russia,law,cbdc">
-            <div class="tags">
-                <span class="tag tag-russia">Россия</span>
-                <span class="tag tag-law">Регулирование</span>
-                <span class="tag tag-cbdc">CBDC</span>
-            </div>
-            <h3><a href="https://www.cbr.ru/press/event/?id=28237" target="_blank" rel="noopener">Банк России вводит новые индикаторы для наблюдения за рынком платёжных услуг</a></h3>
-            <p class="summary">ЦБ будет рассчитывать индекс цифровизации платежей и уровень удовлетворённости потребителей. Оба показателя впервые опубликуют летом 2026 года.</p>
-            <div class="source">Источник: <a href="https://www.cbr.ru/press/event/?id=28237" target="_blank" rel="noopener">Банк России</a></div>
-        </div>
-    </div>
-
-    <!-- 20 июня 2026 -->
-    <div class="date-section">
-        <div class="date-header">20 июня 2026</div>
-
-        <div class="news-card" data-tags="russia,fintech">
-            <div class="tags">
-                <span class="tag tag-russia">Россия</span>
-                <span class="tag tag-fintech">Финтех</span>
-            </div>
-            <h3><a href="https://ria.ru/20260620/karty-2100011362.html" target="_blank" rel="noopener">В банках рассказали, когда выведут Visa и Mastercard из обращения в России</a></h3>
-            <p class="summary">Сбербанк считает оптимальным сроком для плавного перехода на карты «Мир» период до 2030 года. VTB за год заменил около трети карт международных платёжных систем.</p>
-            <div class="source">Источник: <a href="https://ria.ru/20260620/karty-2100011362.html" target="_blank" rel="noopener">РИА Новости</a></div>
-        </div>
-
-        <div class="news-card" data-tags="russia,banking,crypto">
-            <div class="tags">
-                <span class="tag tag-russia">Россия</span>
-                <span class="tag tag-banking">Банки</span>
-                <span class="tag tag-crypto">Крипто</span>
-            </div>
-            <h3><a href="https://ru.beincrypto.com/banki-rossii-serye-kriptoobmenniki/" target="_blank" rel="noopener">Российские банки планируют запустить продажу криптовалюты в мобильных приложениях</a></h3>
-            <p class="summary">Розничные клиенты смогут покупать криптовалюту и ЦФА прямо через банковские приложения. Инициативу выдвинул Банк России, принятие ожидается до конца июля.</p>
-            <div class="source">Источник: <a href="https://ru.beincrypto.com/banki-rossii-serye-kriptoobmenniki/" target="_blank" rel="noopener">BeInCrypto</a></div>
-        </div>
-
-        <div class="news-card" data-tags="world,law">
-            <div class="tags">
-                <span class="tag tag-world">Мир</span>
-                <span class="tag tag-law">Регулирование</span>
-            </div>
-            <h3><a href="https://www.fredlaw.com/alert-2026-and-fundamental-changes-to-the-u-s-payments-system" target="_blank" rel="noopener">Техас принял H.B. 700 — новое регулирование коммерческого финансирования продаж</a></h3>
-            <p class="summary">Закон вводит требования к раскрытию условий и лицензированию для провайдеров и брокеров sales-based financing, работающих в штате.</p>
-            <div class="source">Источник: <a href="https://www.fredlaw.com/alert-2026-and-fundamental-changes-to-the-u-s-payments-system" target="_blank" rel="noopener">Fredrikson</a></div>
-        </div>
-    </div>
-
-    <!-- 19 июня 2026 -->
-    <div class="date-section">
-        <div class="date-header">19 июня 2026</div>
-
-        <div class="news-card" data-tags="russia,banking">
-            <div class="tags">
-                <span class="tag tag-russia">Россия</span>
-                <span class="tag tag-banking">Банки</span>
-            </div>
-            <h3><a href="https://www.cbr.ru/press/pr/?file=639002647276728259BANK_SECTOR.htm" target="_blank" rel="noopener">ЦБ продлил меры поддержки банков и интегрирует их в постоянное регулирование</a></h3>
-            <p class="summary">Банк России временно продлевает ряд послаблений для банковского сектора, одновременно встраивая часть антикризисных мер в систему постоянного регулирования.</p>
-            <div class="source">Источник: <a href="https://www.cbr.ru/press/pr/?file=639002647276728259BANK_SECTOR.htm" target="_blank" rel="noopener">Банк России</a></div>
-        </div>
-    </div>
-
-    <!-- 18 июня 2026 -->
-    <div class="date-section">
-        <div class="date-header">18 июня 2026</div>
-
-        <div class="news-card" data-tags="russia,cbdc,law">
-            <div class="tags">
-                <span class="tag tag-cbdc">CBDC</span>
-                <span class="tag tag-russia">Россия</span>
-                <span class="tag tag-law">Регулирование</span>
-            </div>
-            <h3><a href="https://www.cbr.ru/press/event/?id=25772" target="_blank" rel="noopener">Массовое внедрение цифрового рубля начнётся 1 сентября 2026 года</a></h3>
-            <p class="summary">Торговые компании с выручкой свыше 120 млн рублей обязаны обеспечить приём цифрового рубля. До 31.12.2026 все операции бесплатны, далее — комиссия 0.3%, но не более 1500 руб.</p>
-            <div class="source">Источник: <a href="https://www.cbr.ru/press/event/?id=25772" target="_blank" rel="noopener">Банк России</a></div>
-        </div>
-
-        <div class="news-card" data-tags="world,crypto,law">
-            <div class="tags">
-                <span class="tag tag-world">Мир</span>
-                <span class="tag tag-crypto">Крипто</span>
-                <span class="tag tag-law">Регулирование</span>
-            </div>
-            <h3><a href="https://www.fdic.gov/news/financial-institution-letters/2026/notice-proposed-rulemaking-permitted-payment-stablecoin" target="_blank" rel="noopener">FDIC одобрила проект правил идентификации клиентов эмитентов стейблкоинов</a></h3>
-            <p class="summary">FDIC совместно с ФРС, OCC, NCUA и FinCEN утвердили NPRM по GENIUS Act: эмитенты разрешённых платёжных стейблкоинов приравниваются к финансовым институтам по Bank Secrecy Act.</p>
-            <div class="source">Источник: <a href="https://www.fdic.gov/news/financial-institution-letters/2026/notice-proposed-rulemaking-permitted-payment-stablecoin" target="_blank" rel="noopener">FDIC.gov</a></div>
-        </div>
-
-        <div class="news-card" data-tags="russia,cbdc">
-            <div class="tags">
-                <span class="tag tag-cbdc">CBDC</span>
-                <span class="tag tag-russia">Россия</span>
-            </div>
-            <h3><a href="https://ria.ru/20260618/rubl-2099765346.html" target="_blank" rel="noopener">ЦБ опроверг слухи о контроле над платежами через цифровой рубль</a></h3>
-            <p class="summary">Банк России подчеркнул, что все счета цифрового рубля и операции с ним защищены банковской тайной. Цифровой рубль не предназначен для тотального контроля над платежами граждан.</p>
-            <div class="source">Источник: <a href="https://ria.ru/20260618/rubl-2099765346.html" target="_blank" rel="noopener">РИА Новости</a></div>
-        </div>
-
-        <div class="news-card" data-tags="russia,law">
-            <div class="tags">
-                <span class="tag tag-russia">Россия</span>
-                <span class="tag tag-law">Регулирование</span>
-            </div>
-            <h3><a href="https://www.vedomosti.ru/finance/articles/2026/06/18/1206721-nspk-predlozhila-mehanizm-vivoda-kart-visa-i-mastercard-iz-oborota" target="_blank" rel="noopener">НСПК предложила механизм вывода карт Visa и Mastercard из оборота</a></h3>
-            <p class="summary">Национальная система платёжных карт предложила постепенно снижать межбанковские комиссии по картам Visa и Mastercard, обнуляя их к 2028 году.</p>
-            <div class="source">Источник: <a href="https://www.vedomosti.ru/finance/articles/2026/06/18/1206721-nspk-predlozhila-mehanizm-vivoda-kart-visa-i-mastercard-iz-oborota" target="_blank" rel="noopener">Ведомости</a></div>
-        </div>
-
-        <div class="news-card" data-tags="russia,cbdc">
-            <div class="tags">
-                <span class="tag tag-cbdc">CBDC</span>
-                <span class="tag tag-russia">Россия</span>
-            </div>
-            <h3><a href="https://riapravo.ru/novosti-prava/universalnyj-platjozhnyj-kod-kak-izmenyatsya-raschjoty-s-1-sentyabrya-2026-goda/" target="_blank" rel="noopener">Универсальный платёжный код: как изменятся расчёты с 1 сентября 2026 года</a></h3>
-            <p class="summary">С 1 сентября вводится единый QR-код, объединяющий оплату через СБП, цифровой рубль и банковские карты. Один код — любой способ оплаты.</p>
-            <div class="source">Источник: <a href="https://riapravo.ru/novosti-prava/universalnyj-platjozhnyj-kod-kak-izmenyatsya-raschjoty-s-1-sentyabrya-2026-goda/" target="_blank" rel="noopener">РИА Право</a></div>
-        </div>
-    </div>
-
-    <!-- 17 июня 2026 -->
-    <div class="date-section">
-        <div class="date-header">17 июня 2026</div>
-
-        <div class="news-card" data-tags="russia,crypto,law">
-            <div class="tags">
-                <span class="tag tag-crypto">Крипто</span>
-                <span class="tag tag-russia">Россия</span>
-                <span class="tag tag-law">Регулирование</span>
-            </div>
-            <h3><a href="https://pravorf.ru/blog/novoe-regulirovanie-kriptovalyut-s-1-iyulya-2026" target="_blank" rel="noopener">Новое регулирование криптовалют в России с 1 июля 2026</a></h3>
-            <p class="summary">Легальный оборот крипты — только через лицензированных посредников под надзором ЦБ. Юрлица-резиденты получат право расчётов по внешнеторговым контрактам.</p>
-            <div class="source">Источник: <a href="https://pravorf.ru/blog/novoe-regulirovanie-kriptovalyut-s-1-iyulya-2026" target="_blank" rel="noopener">ПравоРФ</a></div>
-        </div>
-
-        <div class="news-card" data-tags="russia,crypto,law">
-            <div class="tags">
-                <span class="tag tag-crypto">Крипто</span>
-                <span class="tag tag-law">Регулирование</span>
-            </div>
-            <h3><a href="https://www.interfax.ru/business/1085154" target="_blank" rel="noopener">Законопроект о регулировании цифровых валют прошёл I чтение в Госдуме</a></h3>
-            <p class="summary">Пакет законопроектов «О цифровой валюте и цифровых правах» — обязательная идентификация, лицензирование бирж, запрет крипты как средства платежа внутри страны.</p>
-            <div class="source">Источник: <a href="https://www.interfax.ru/business/1085154" target="_blank" rel="noopener">Интерфакс</a></div>
-        </div>
-    </div>
-
-    <!-- 16 июня 2026 -->
-    <div class="date-section">
-        <div class="date-header">16 июня 2026</div>
-
-        <div class="news-card" data-tags="russia,law,banking">
-            <div class="tags">
-                <span class="tag tag-russia">Россия</span>
-                <span class="tag tag-law">Регулирование</span>
-                <span class="tag tag-banking">Банки</span>
-            </div>
-            <h3><a href="https://www.vedomosti.ru/finance/articles/2026/06/16/1206085-rossiiskie-vlasti-vnesli-suschestvennie-izmeneniya-v-kontrsanktsionnoe-regulirovanie" target="_blank" rel="noopener">Российские власти внесли существенные изменения в контрсанкционное регулирование</a></h3>
-            <p class="summary">Изменения касаются лимитов по валютным операциям и упрощают выход российского бизнеса на зарубежные рынки. Два ключевых нормативных акта приняты в июне.</p>
-            <div class="source">Источник: <a href="https://www.vedomosti.ru/finance/articles/2026/06/16/1206085-rossiiskie-vlasti-vnesli-suschestvennie-izmeneniya-v-kontrsanktsionnoe-regulirovanie" target="_blank" rel="noopener">Ведомости</a></div>
-        </div>
-
-        <div class="news-card" data-tags="world,cbdc">
-            <div class="tags">
-                <span class="tag tag-world">Мир</span>
-                <span class="tag tag-cbdc">CBDC</span>
-            </div>
-            <h3><a href="https://www.pymnts.com/cbdc/2026/eu-cbdcs-face-2026-deadlines-as-digital-shift-holds-firm/" target="_blank" rel="noopener">Цифровой евро: ЕЦБ приближается к решающему голосованию</a></h3>
-            <p class="summary">ЕЦБ завершил двухлетнюю фазу подготовки. Решение о запуске ожидается в конце 2026 года. Обсуждаются лимит 3000 евро на человека и роль коммерческих банков.</p>
-            <div class="source">Источник: <a href="https://www.pymnts.com/cbdc/2026/eu-cbdcs-face-2026-deadlines-as-digital-shift-holds-firm/" target="_blank" rel="noopener">PYMNTS</a></div>
-        </div>
-
-        <div class="news-card" data-tags="world,crypto,law">
-            <div class="tags">
-                <span class="tag tag-world">Мир</span>
-                <span class="tag tag-crypto">Крипто</span>
-                <span class="tag tag-law">Регулирование</span>
-            </div>
-            <h3><a href="https://sumsub.com/blog/crypto-regulations-in-the-european-union-markets-in-crypto-assets-mica/" target="_blank" rel="noopener">MiCA: 1 июля 2026 — конец переходного периода для криптокомпаний в ЕС</a></h3>
-            <p class="summary">Работа без лицензии MiCA после 1 июля — нарушение закона. Tether (USDT) отказался от лицензирования, делистингован крупнейшими биржами в ЕЭЗ.</p>
-            <div class="source">Источник: <a href="https://sumsub.com/blog/crypto-regulations-in-the-european-union-markets-in-crypto-assets-mica/" target="_blank" rel="noopener">Sumsub</a></div>
-        </div>
-    </div>
-
-    <!-- 15 июня 2026 -->
-    <div class="date-section">
-        <div class="date-header">15 июня 2026</div>
-
-        <div class="news-card" data-tags="world,fintech">
-            <div class="tags">
-                <span class="tag tag-world">Мир</span>
-                <span class="tag tag-fintech">Финтех</span>
-            </div>
-            <h3><a href="https://www.jpmorgan.com/payments/newsroom/agentic-ai-payments-takeaways-2026" target="_blank" rel="noopener">J.P. Morgan: ИИ-агенты в платежах — 4 вывода с NY Tech Week 2026</a></h3>
-            <p class="summary">Следующая фаза ИИ в платежах: агентская делегация, кросс-граничные правила и автоматизация корпоративных платежей.</p>
-            <div class="source">Источник: <a href="https://www.jpmorgan.com/payments/newsroom/agentic-ai-payments-takeaways-2026" target="_blank" rel="noopener">J.P. Morgan</a></div>
-        </div>
-
-        <div class="news-card" data-tags="russia,world">
-            <div class="tags">
-                <span class="tag tag-russia">Россия</span>
-                <span class="tag tag-world">Мир</span>
-            </div>
-            <h3><a href="https://companies.rbc.ru/news/4lA5KpDLke/platezhi-buduschego-v-2026-godu-zachem-briks-sozdaet-novyie-raschetnyie-sistemyi/" target="_blank" rel="noopener">БРИКС тестирует альтернативные расчётные системы BRICS Bridge и BRICS Clear</a></h3>
-            <p class="summary">Минфин России объявил о начале тестирования — пилотные двусторонние маршруты между участниками рынка уже работают.</p>
-            <div class="source">Источник: <a href="https://companies.rbc.ru/news/4lA5KpDLke/platezhi-buduschego-v-2026-godu-zachem-briks-sozdaet-novyie-raschetnyie-sistemyi/" target="_blank" rel="noopener">РБК</a></div>
-        </div>
-
-        <div class="news-card" data-tags="world,cbdc">
-            <div class="tags">
-                <span class="tag tag-world">Мир</span>
-                <span class="tag tag-cbdc">CBDC</span>
-            </div>
-            <h3><a href="https://www.pymnts.com/cbdc/2026/india-wants-brics-nations-to-link-digital-currencies/" target="_blank" rel="noopener">Индия предлагает странам БРИКС объединить цифровые валюты центробанков</a></h3>
-            <p class="summary">ЦБ Индии предложил связать национальные CBDC для упрощения трансграничных расчётов. Проект на стадии обсуждения.</p>
-            <div class="source">Источник: <a href="https://www.pymnts.com/cbdc/2026/india-wants-brics-nations-to-link-digital-currencies/" target="_blank" rel="noopener">PYMNTS</a></div>
-        </div>
-    </div>
-
-    <!-- 5-10 июня 2026 -->
-    <div class="date-section">
-        <div class="date-header">5 — 10 июня 2026</div>
-
-        <div class="news-card" data-tags="russia,ecom,law">
-            <div class="tags">
-                <span class="tag tag-russia">Россия</span>
-                <span class="tag tag-ecom">E-commerce</span>
-                <span class="tag tag-law">Регулирование</span>
-            </div>
-            <h3><a href="https://www.vedomosti.ru/retail/regulation/columns/2026/06/05/1203247-kak-zakon-o-platformennoi-ekonomike-izmenit-onlain-torgovlyu" target="_blank" rel="noopener">Как закон о платформенной экономике изменит онлайн-торговлю</a></h3>
-            <p class="summary">С 1 октября 2026 маркетплейсы обязаны уведомлять об изменении комиссий за 45 дней, проверять продавцов через госреестры, раскрывать алгоритмы ранжирования и ежемесячно передавать данные в ФНС.</p>
-            <div class="source">Источник: <a href="https://www.vedomosti.ru/retail/regulation/columns/2026/06/05/1203247-kak-zakon-o-platformennoi-ekonomike-izmenit-onlain-torgovlyu" target="_blank" rel="noopener">Ведомости</a></div>
-        </div>
-
-        <div class="news-card" data-tags="russia,ecom,law">
-            <div class="tags">
-                <span class="tag tag-russia">Россия</span>
-                <span class="tag tag-ecom">E-commerce</span>
-                <span class="tag tag-law">Регулирование</span>
-            </div>
-            <h3><a href="https://economy.gov.ru/material/news/s_1_oktyabrya_2026_goda_v_rossii_vvoditsya_oficialnoe_regulirovanie_deyatelnosti_platform.html" target="_blank" rel="noopener">С 1 октября 2026 в России вводится официальное регулирование цифровых платформ</a></h3>
-            <p class="summary">Закон № 289-ФЗ регулирует маркетплейсы, агрегаторы и сервисы услуг. Минэкономразвития создаст реестр платформ до 2 ноября 2026 года.</p>
-            <div class="source">Источник: <a href="https://economy.gov.ru/material/news/s_1_oktyabrya_2026_goda_v_rossii_vvoditsya_oficialnoe_regulirovanie_deyatelnosti_platform.html" target="_blank" rel="noopener">Минэкономразвития РФ</a></div>
-        </div>
-
-        <div class="news-card" data-tags="russia,law">
-            <div class="tags">
-                <span class="tag tag-russia">Россия</span>
-                <span class="tag tag-law">Регулирование</span>
-            </div>
-            <h3><a href="https://www.profbanking.com/blog/5514-short-about-main" target="_blank" rel="noopener">Новое Положение ЦБ о платёжной системе: 876-П вместо 732-П</a></h3>
-            <p class="summary">Со 2 июня 2026 года действует новое Положение № 876-П «О платёжной системе Банка России», заменяющее предыдущую редакцию.</p>
-            <div class="source">Источник: <a href="https://www.profbanking.com/blog/5514-short-about-main" target="_blank" rel="noopener">ProfBanking</a></div>
-        </div>
-
-        <div class="news-card" data-tags="russia,ecom">
-            <div class="tags">
-                <span class="tag tag-russia">Россия</span>
-                <span class="tag tag-ecom">E-commerce</span>
-            </div>
-            <h3><a href="https://habr.com/ru/news/1033010/" target="_blank" rel="noopener">Правительство утвердило правила ведения реестра цифровых платформ</a></h3>
-            <p class="summary">Минэкономразвития будет вести электронный реестр цифровых платформ. Ozon, Wildberries и другие маркетплейсы обязаны зарегистрироваться.</p>
-            <div class="source">Источник: <a href="https://habr.com/ru/news/1033010/" target="_blank" rel="noopener">Хабр</a></div>
-        </div>
-
-        <div class="news-card" data-tags="russia,banking,law">
-            <div class="tags">
-                <span class="tag tag-russia">Россия</span>
-                <span class="tag tag-banking">Банки</span>
-                <span class="tag tag-law">Регулирование</span>
-            </div>
-            <h3><a href="https://ria.ru/20260609/gosduma-2097923590.html" target="_blank" rel="noopener">Госдума приняла закон, ограничивающий число банковских карт у гражданина до 20</a></h3>
-            <p class="summary">Закон усиливает антифрод-защиту: банки получают право задерживать подозрительные платежи на срок до 6 часов. Часть второго пакета мер против кибермошенничества.</p>
-            <div class="source">Источник: <a href="https://ria.ru/20260609/gosduma-2097923590.html" target="_blank" rel="noopener">РИА Новости</a></div>
-        </div>
-
-        <div class="news-card" data-tags="russia,crypto,law">
-            <div class="tags">
-                <span class="tag tag-russia">Россия</span>
-                <span class="tag tag-crypto">Крипто</span>
-                <span class="tag tag-law">Регулирование</span>
-            </div>
-            <h3><a href="https://www.coindesk.com/business/2026/05/26/uk-sanctions-huobi-and-ruble-stablecoin-issuer-in-crackdown-on-russia-crypto-networks" target="_blank" rel="noopener">Минфин РФ анонсировал штрафные комиссии до 3% на USDT и USDC</a></h3>
-            <p class="summary">На ПМЭФ-2026 замминистра финансов Иван Чебесков заявил о планах ввести повышенные комиссии на «недружественные» стейблкоины. Параллельно готовится отдельный законопроект о рублёвых стейблкоинах как платёжном инструменте.</p>
-            <div class="source">Источник: <a href="https://www.coindesk.com/business/2026/05/26/uk-sanctions-huobi-and-ruble-stablecoin-issuer-in-crackdown-on-russia-crypto-networks" target="_blank" rel="noopener">CoinDesk</a></div>
-        </div>
-
-        <div class="news-card" data-tags="world,law,banking">
-            <div class="tags">
-                <span class="tag tag-world">Мир</span>
-                <span class="tag tag-law">Регулирование</span>
-                <span class="tag tag-banking">Банки</span>
-            </div>
-            <h3><a href="https://merchantcostconsulting.com/lower-credit-card-processing-fees/payment-news-today-june-2026/" target="_blank" rel="noopener">Суд предварительно одобрил пересмотр расчётного соглашения Visa и Mastercard</a></h3>
-            <p class="summary">Судья Брайан Коган утвердил условия, по которым платёжные системы снизят interchange-комиссии в среднем на 10 б.п. за 5 лет; стандартные кредитные карты в США будут ограничены потолком 1,25%.</p>
-            <div class="source">Источник: <a href="https://merchantcostconsulting.com/lower-credit-card-processing-fees/payment-news-today-june-2026/" target="_blank" rel="noopener">Merchant Cost Consulting</a></div>
-        </div>
-    </div>
-
-    <!-- 1-4 июня 2026 -->
-    <div class="date-section">
-        <div class="date-header">1 — 4 июня 2026</div>
-
-        <div class="news-card" data-tags="world,fintech,law">
-            <div class="tags">
-                <span class="tag tag-world">Мир</span>
-                <span class="tag tag-fintech">Финтех</span>
-                <span class="tag tag-law">Регулирование</span>
-            </div>
-            <h3><a href="https://www.paymentsdive.com/news/how-payments-will-evolve-6-industry-trends-to-watch-in-2026/808869/" target="_blank" rel="noopener">6 ключевых трендов платёжной индустрии 2026 года</a></h3>
-            <p class="summary">Real-time платежи — новый стандарт: 53% компаний планируют RTP. FedNow тестирует кросс-граничные мгновенные переводы.</p>
-            <div class="source">Источник: <a href="https://www.paymentsdive.com/news/how-payments-will-evolve-6-industry-trends-to-watch-in-2026/808869/" target="_blank" rel="noopener">Payments Dive</a></div>
-        </div>
-
-        <div class="news-card" data-tags="russia,banking,law">
-            <div class="tags">
-                <span class="tag tag-russia">Россия</span>
-                <span class="tag tag-banking">Банки</span>
-                <span class="tag tag-law">Регулирование</span>
-            </div>
-            <h3><a href="https://www.id-sys.ru/articles/regulyatornie_tebovaniya_2026" target="_blank" rel="noopener">Регуляторные требования для банков в 2026: к чему готовиться</a></h3>
-            <p class="summary">Банки обязаны заключать договоры социального вклада/счёта с получателями мер соцподдержки. Макропруденциальные ограничения на розничное кредитование сохраняются.</p>
-            <div class="source">Источник: <a href="https://www.id-sys.ru/articles/regulyatornie_tebovaniya_2026" target="_blank" rel="noopener">ID Systems</a></div>
-        </div>
-    </div>
-
-</div>
-
-<div class="footer">
-    <p>PayDigest &copy; 2026 &mdash; Агрегатор новостей платёжной индустрии, банковского права и электронной коммерции</p>
-    <p style="margin-top: 0.5rem;">Все материалы принадлежат их авторам. Мы публикуем только аннотации со ссылками на оригиналы.</p>
-    <p style="margin-top: 0.5rem;"><a href="legal.html">Правовые статьи</a></p>
-</div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const filterBtns = document.querySelectorAll('.filter-btn');
-    const cards = document.querySelectorAll('.news-card');
-    const dateSections = document.querySelectorAll('.date-section');
-    filterBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            filterBtns.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            const filter = this.dataset.filter;
-            cards.forEach(card => {
-                card.classList.toggle('hidden', filter !== 'all' && !card.dataset.tags.includes(filter));
-            });
-            dateSections.forEach(section => {
-                section.style.display = section.querySelectorAll('.news-card:not(.hidden)').length === 0 ? 'none' : 'block';
-            });
-        });
-    });
-});
-</script>
-
+  <footer>
+    <div><span class="brand-mark" aria-hidden="true">P</span><b>PayDigest</b></div>
+    <p>Аннотации со ссылками на оригиналы. Даты и формулировки проверены на 15 июля 2026 года.</p>
+    <a href="#payments">Наверх ↑</a>
+  </footer>
 </body>
 </html>

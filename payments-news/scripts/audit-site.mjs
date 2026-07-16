@@ -10,6 +10,7 @@ const paymentPattern = /плат[её]ж[\p{L}-]*|(?:^|[^\p{L}\p{N}])оплат[
 const aiPattern = /искусственн[\p{L}-]*\s+интеллект[\p{L}-]*|нейросет[\p{L}-]*|(?:^|[^\p{L}\p{N}])ии(?:[^\p{L}\p{N}]|$)|(?:^|[^\p{L}\p{N}])ai(?:[^\p{L}\p{N}]|$)|chatgpt|(?:^|[^\p{L}\p{N}])gpt(?:[^\p{L}\p{N}]|$)|deepseek|gigachat|claude|машинн[\p{L}-]*\s+обуч[\p{L}-]*|дипфейк[\p{L}-]*|генеративн[\p{L}-]*|языков[\p{L}-]*\s+модел[\p{L}-]*|(?:^|[^\p{L}\p{N}])llm(?:[^\p{L}\p{N}]|$)|(?:ии|ai)[\s-]*агент[\p{L}-]*/iu;
 const titleStopWords = new Set(['будут', 'после', 'через', 'между', 'против', 'области', 'сфере', 'новый', 'новая', 'новые', 'может', 'могут', 'предлагается']);
 const shortEventTokens = new Set(['ии', 'ai', 'сбп', 'qr']);
+const eventPromoPattern = /спикер[\p{L}-]*|регистрац[\p{L}-]*|билет[\p{L}-]*|(?:конференц|форум|мероприят)[\p{L}-]*.*партн[её]р[\p{L}-]*|партн[её]р[\p{L}-]*.*(?:конференц|форум|мероприят)[\p{L}-]*/iu;
 
 function fail(message) {
   throw new Error(`Аудит PayDigest: ${message}`);
@@ -63,6 +64,7 @@ for (const section of sections) {
     const text = `${item.title} ${item.summary}`;
     if (section === 'payments' && !paymentPattern.test(text)) fail(`смешение тем в «Платежах»: ${item.title}`);
     if (section === 'ai' && !aiPattern.test(text)) fail(`смешение тем в «ИИ»: ${item.title}`);
+    if ((section === 'payments' || section === 'ai') && eventPromoPattern.test(item.title)) fail(`рекламный анонс в ${section}: ${item.title}`);
     if (eventTitles.some((title) => sameEvent(title, item.title))) fail(`повтор одного события в ${section}: ${item.title}`);
     eventTitles.push(item.title);
   }

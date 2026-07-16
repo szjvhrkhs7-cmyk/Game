@@ -29,6 +29,7 @@ const AI_TOPIC_PATTERN = /искусственн[\p{L}-]*\s+интеллект[\
 const PAYMENT_CONTEXT_PATTERN = /банк[\p{L}-]*|финанс[\p{L}-]*|плат[её]ж[\p{L}-]*|оплат[\p{L}-]*|перевод[\p{L}-]*|сч[её]т[\p{L}-]*|наличн[\p{L}-]*|(?:^|[^\p{L}\p{N}])сбп(?:[^\p{L}\p{N}]|$)/iu;
 const FRAUD_ONLY_PATTERN = /антифрод[\p{L}-]*|мошеннич[\p{L}-]*/iu;
 const AI_ENUMERATION_PATTERN = /(?:(?:основн|ключев)[\p{L}-]*\s+)?тем[\p{L}-]*[^.]*,[^.]*(?:^|[^\p{L}\p{N}])(?:ии|ai)(?:[^\p{L}\p{N}]|$)/iu;
+const EVENT_PROMO_PATTERN = /спикер[\p{L}-]*|регистрац[\p{L}-]*|билет[\p{L}-]*|(?:конференц|форум|мероприят)[\p{L}-]*.*партн[её]р[\p{L}-]*|партн[её]р[\p{L}-]*.*(?:конференц|форум|мероприят)[\p{L}-]*/iu;
 const TITLE_STOP_WORDS = new Set(['будут', 'после', 'через', 'между', 'против', 'области', 'сфере', 'новый', 'новая', 'новые', 'может', 'могут', 'предлагается']);
 const SHORT_EVENT_TOKENS = new Set(['ии', 'ai', 'сбп', 'qr']);
 
@@ -315,6 +316,7 @@ function relevantCandidate(section, item) {
   const title = item.title || '';
   const text = `${title} ${item.description || ''}`;
   if (!SECTION_RULES[section].pattern.test(title)) return false;
+  if (EVENT_PROMO_PATTERN.test(title)) return false;
   if (section === 'payments' && FRAUD_ONLY_PATTERN.test(title) && !PAYMENT_CONTEXT_PATTERN.test(title)) return false;
   if (section === 'ai' && AI_ENUMERATION_PATTERN.test(title)) return false;
   return true;
@@ -516,6 +518,7 @@ async function selfTest() {
   if (relevantCandidate('payments', { title: 'Продажу предоплаченных SIM-карт запретят в рамках Антифрода', description: 'Правила оформления мобильных номеров' })) throw new Error('Самопроверка контекста платежей не пройдена');
   if (relevantCandidate('ai', { title: 'Темами саммита будут расчеты, ИИ и продовольствие', description: '' })) throw new Error('Самопроверка контекста ИИ не пройдена');
   if (PAYMENT_TOPIC_PATTERN.test('Вступил в силу новый порядок ведения реестра налогоплательщиков')) throw new Error('Самопроверка границ слова «оплата» не пройдена');
+  if (relevantCandidate('payments', { title: 'Платежный форум — новые спикеры и партнеры', description: 'Регистрация участников' })) throw new Error('Самопроверка рекламных анонсов не пройдена');
   if (cleanUrl('https://www.rbc.ru/finances/example') !== 'https://amp.rbc.ru/rbcnews/finances/example') {
     throw new Error('Самопроверка нормализации РБК не пройдена');
   }

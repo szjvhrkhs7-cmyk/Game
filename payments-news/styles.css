@@ -790,6 +790,32 @@ footer > a {
   color: inherit;
 }
 
+.source-directory {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.source-directory span {
+  margin-right: 2px;
+  color: var(--text);
+  font-weight: 800;
+}
+
+.source-directory a {
+  color: var(--muted);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.source-directory a:hover {
+  color: var(--text);
+}
+
 @media (max-width: 900px) {
   .site-header {
     padding-inline: 20px;
@@ -988,6 +1014,11 @@ footer > a {
 
   footer > a {
     justify-self: start;
+  }
+
+  .source-directory {
+    grid-column: auto;
+    align-items: flex-start;
   }
 }
 

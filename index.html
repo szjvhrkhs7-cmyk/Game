@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#172039">
+  <meta name="description" content="Банановые коты — оригинальный браузерный платформер о двух котиках, бананах и мышином переполохе.">
+  <title>Банановые коты: Мышиный переполох</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/icon-180.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="game-shell" aria-label="Игра «Банановые коты»">
+    <header class="topbar">
+      <div class="brand" aria-label="Банановые коты">
+        <span class="brand-mark">🍌</span>
+        <span><strong>Банановые коты</strong><small>Мышиный переполох</small></span>
+      </div>
+      <div class="header-actions">
+        <button id="soundButton" class="icon-button" type="button" aria-label="Выключить звук" title="Звук">🔊</button>
+        <button id="pauseButton" class="icon-button" type="button" aria-label="Пауза" title="Пауза">Ⅱ</button>
+        <button id="fullscreenButton" class="icon-button" type="button" aria-label="На весь экран" title="На весь экран">⛶</button>
+      </div>
+    </header>
+
+    <section class="stage-wrap">
+      <canvas id="gameCanvas" width="540" height="960" aria-label="Вертикальное игровое поле"></canvas>
+
+      <div id="hud" class="hud" hidden>
+        <div class="hud-pill"><span>Уровень</span><strong id="hudLevel">1–1</strong></div>
+        <div class="hud-pill"><span>Бананы</span><strong id="hudBananas">0</strong></div>
+        <div class="hud-pill"><span>Очки</span><strong id="hudScore">000000</strong></div>
+        <div class="hud-pill health"><span>Силы</span><strong id="hudHealth" aria-label="Три единицы здоровья">♥♥♥</strong></div>
+      </div>
+
+      <section id="startScreen" class="screen-panel start-panel">
+        <div class="eyebrow">Оригинальный 2D-платформер</div>
+        <h1>Мыши украли<br><span>Золотой банан!</span></h1>
+        <p class="lead">Два котика отправляются в погоню. Выбирай ведущего, меняй героев на ходу и отбивайся бананами.</p>
+
+        <div class="cat-picker" role="radiogroup" aria-label="Выбор ведущего котика">
+          <button class="cat-card selected" type="button" data-cat="0" role="radio" aria-checked="true">
+            <span class="portrait orange"><img src="assets/face-boroda.webp" alt="Портрет Кота Бородыча"></span>
+            <span><strong>Кот Бородыч</strong><small>Сильный банановый удар</small></span>
+            <em>Сила</em>
+          </button>
+          <button class="cat-card" type="button" data-cat="1" role="radio" aria-checked="false">
+            <span class="portrait blue"><img src="assets/face-ryzhik.webp" alt="Портрет Кота Рыжика"></span>
+            <span><strong>Кот Рыжик</strong><small>Быстрее бегает и прыгает</small></span>
+            <em>Скорость</em>
+          </button>
+        </div>
+
+        <button id="startButton" class="primary-button" type="button"><span>Начать погоню</span><b>→</b></button>
+        <div class="quick-help"><span>← → / A D — бег</span><span>Пробел — прыжок</span><span>X — банан</span><span>Q — сменить кота</span></div>
+      </section>
+
+      <section id="dialogScreen" class="screen-panel compact-panel" hidden>
+        <div id="dialogEyebrow" class="eyebrow">Уровень пройден</div>
+        <h2 id="dialogTitle">Кухня спасена!</h2>
+        <p id="dialogText">Но мыши унесли банан дальше.</p>
+        <div id="dialogStats" class="result-stats"></div>
+        <button id="dialogButton" class="primary-button" type="button"><span>Дальше</span><b>→</b></button>
+        <button id="menuButton" class="text-button" type="button">Вернуться в меню</button>
+      </section>
+
+      <section id="pauseScreen" class="screen-panel compact-panel" hidden>
+        <div class="eyebrow">Передышка</div>
+        <h2>Игра на паузе</h2>
+        <p>Мыши тоже притормозили. Ненадолго.</p>
+        <button id="resumeButton" class="primary-button" type="button"><span>Продолжить</span><b>▶</b></button>
+        <button id="restartButton" class="text-button" type="button">Начать уровень заново</button>
+      </section>
+
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    </section>
+
+    <nav id="touchControls" class="touch-controls" aria-label="Управление игрой" hidden>
+      <div class="touch-group direction-group">
+        <button type="button" data-input="left" aria-label="Бежать влево">◀</button>
+        <button type="button" data-input="right" aria-label="Бежать вправо">▶</button>
+      </div>
+      <button class="switch-button" type="button" data-action="switch" aria-label="Сменить котика">↻<small>КОТ</small></button>
+      <div class="touch-group action-group">
+        <button type="button" data-input="attack" aria-label="Бросить банан">🍌</button>
+        <button class="jump-button" type="button" data-input="jump" aria-label="Прыжок">↑</button>
+      </div>
+    </nav>
+
+    <p class="footer-note">Игра создана для вертикального экрана. Прогресс сохраняется на этом устройстве.</p>
+  </main>
+
+  <noscript>Для игры требуется JavaScript.</noscript>
+  <script type="module" src="src/game.js"></script>
+</body>
+</html>

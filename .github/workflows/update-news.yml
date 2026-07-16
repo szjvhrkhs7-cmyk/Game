@@ -1,7 +1,7 @@
 name: Update PayDigest news
 run-name: Обновление PayDigest · ${{ github.actor }}
 
-# Editorial policy v2: strict topic separation and one publication per event.
+# Editorial policy v3: Unicode boundaries, strict topic separation and one publication per event.
 
 on:
   schedule:

@@ -20,9 +20,10 @@ const FEEDS = [
   ['Право.ru', 'https://pravo.ru/rss/'],
   ['Hi-News.ru', 'https://hi-news.ru/feed'],
   ['Банковское обозрение', 'https://bosfera.ru/rss.xml'],
-  ['PLUSworld', 'https://plusworld.ru/rss/'],
   ['Банки.ру', 'https://www.banki.ru/xml/news.rss'],
 ];
+
+const PLUSWORLD_HOME = 'https://plusworld.ru/';
 
 const SECTION_RULES = {
   payments: {
@@ -94,6 +95,56 @@ function parseFeed(xml, source) {
   }).filter((item) => item.title && /^https?:\/\//i.test(item.url) && item.dateISO);
 }
 
+function htmlAttribute(tag, name) {
+  const match = tag.match(new RegExp(`\\b${name}\\s*=\\s*(["'])([\\s\\S]*?)\\1`, 'i'));
+  return match ? decodeXml(match[2]) : '';
+}
+
+function metaContent(html, key) {
+  for (const tag of html.match(/<meta\b[^>]*>/gi) || []) {
+    const attribute = htmlAttribute(tag, 'property') || htmlAttribute(tag, 'name');
+    if (attribute.toLowerCase() === key.toLowerCase()) return htmlAttribute(tag, 'content');
+  }
+  return '';
+}
+
+function parsePlusworldArticle(html, url) {
+  const title = safeText(metaContent(html, 'og:title') || html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1], 240);
+  const description = safeText(metaContent(html, 'og:description') || metaContent(html, 'description'), 700);
+  const published = metaContent(html, 'article:published_time') || htmlAttribute(html.match(/<time\b[^>]*>/i)?.[0] || '', 'datetime');
+  const isoMatch = published.match(/(20\d{2})-(\d{2})-(\d{2})/);
+  const dottedMatch = html.match(/\b(\d{2})\.(\d{2})\.(20\d{2})\b/);
+  const dateISO = isoMatch
+    ? `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`
+    : dottedMatch ? `${dottedMatch[3]}-${dottedMatch[2]}-${dottedMatch[1]}` : '';
+  return { source: 'PLUSworld', title: decodeXml(title), url, description: decodeXml(description), dateISO };
+}
+
+async function fetchPlusworld() {
+  const response = await fetch(PLUSWORLD_HOME, {
+    headers: { 'user-agent': 'PayDigest/1.0 (+https://github.com/szjvhrkhs7-cmyk/Game)' },
+    signal: AbortSignal.timeout(20_000),
+  });
+  if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+  const homepage = await response.text();
+  const paths = [...homepage.matchAll(/href\s*=\s*["'](?:https?:\/\/(?:www\.)?plusworld\.ru)?(\/articles\/\d+\/?)['"]/gi)]
+    .map((match) => new URL(match[1], PLUSWORLD_HOME).toString());
+  const urls = [...new Set(paths)].slice(0, 18);
+  if (!urls.length) throw new Error('на главной странице не найдены ссылки на статьи');
+
+  const settled = await Promise.allSettled(urls.map(async (url) => {
+    const articleResponse = await fetch(url, {
+      headers: { 'user-agent': 'PayDigest/1.0 (+https://github.com/szjvhrkhs7-cmyk/Game)' },
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!articleResponse.ok) throw new Error(`${articleResponse.status} ${articleResponse.statusText}`);
+    return parsePlusworldArticle(await articleResponse.text(), url);
+  }));
+
+  return settled.flatMap((result) => result.status === 'fulfilled' ? [result.value] : [])
+    .filter((item) => item.title && item.dateISO && /^https:\/\/plusworld\.ru\/articles\/\d+\/?$/i.test(item.url));
+}
+
 async function fetchFeed([source, url]) {
   const response = await fetch(url, {
     headers: { 'user-agent': 'PayDigest/1.0 (+https://github.com/szjvhrkhs7-cmyk/Game)' },
@@ -114,6 +165,13 @@ async function collectFeeds() {
       console.warn(`• ${FEEDS[index][0]} пропущен: ${result.reason?.message || result.reason}`);
     }
   });
+  try {
+    const plusworldItems = await fetchPlusworld();
+    console.log(`✓ PLUSworld: ${plusworldItems.length}`);
+    items.push(...plusworldItems);
+  } catch (error) {
+    console.warn(`• PLUSworld пропущен: ${error?.message || error}`);
+  }
   return items;
 }
 
@@ -146,12 +204,55 @@ function inSectionPeriod(date, section) {
 function cleanUrl(value) {
   try {
     const url = new URL(value);
+    if (url.protocol !== 'https:') return '';
+    if (url.hostname === 'www.rbc.ru') {
+      url.hostname = 'amp.rbc.ru';
+      url.pathname = `/rbcnews${url.pathname}`;
+    }
     ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'yclid', 'gclid'].forEach((key) => url.searchParams.delete(key));
     url.hash = '';
     return url.toString();
   } catch {
     return '';
   }
+}
+
+async function verifyPublishedLinks(data) {
+  const items = Object.values(data).flatMap((section) => section.items || []);
+  const dead = [];
+  const checked = [];
+  for (let index = 0; index < items.length; index += 6) {
+    const batch = items.slice(index, index + 6);
+    const results = await Promise.all(batch.map(async (item) => {
+      const url = cleanUrl(item.url);
+      if (!url) return { item, status: 0, error: 'некорректный или небезопасный URL' };
+      try {
+        const response = await fetch(url, {
+          redirect: 'follow',
+          headers: {
+            'user-agent': 'Mozilla/5.0 (compatible; PayDigest-LinkCheck/1.0; +https://github.com/szjvhrkhs7-cmyk/Game)',
+            accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          },
+          signal: AbortSignal.timeout(15_000),
+        });
+        await response.body?.cancel().catch(() => {});
+        return { item, status: response.status, finalUrl: response.url };
+      } catch (error) {
+        return { item, status: 0, error: error?.message || String(error) };
+      }
+    }));
+    checked.push(...results);
+  }
+
+  for (const result of checked) {
+    if (result.status === 404 || result.status === 410 || (!result.status && result.error === 'некорректный или небезопасный URL')) {
+      dead.push(`${result.item.source}: ${result.item.url} (${result.status || result.error})`);
+    } else if (!result.status || result.status >= 400) {
+      console.warn(`• Проверка ссылки ограничена сайтом: ${result.item.url} (${result.status || result.error})`);
+    }
+  }
+  if (dead.length) throw new Error(`Найдены нерабочие ссылки:\n${dead.join('\n')}`);
+  console.log(`✓ Проверено ссылок: ${checked.length}; ответов 404/410 нет`);
 }
 
 function dedupe(items) {
@@ -346,6 +447,14 @@ async function selfTest() {
     throw new Error('Самопроверка RSS не пройдена');
   }
   if (!parseRussianDate('15 июля 2026')) throw new Error('Самопроверка даты не пройдена');
+  if (cleanUrl('https://www.rbc.ru/finances/example') !== 'https://amp.rbc.ru/rbcnews/finances/example') {
+    throw new Error('Самопроверка нормализации РБК не пройдена');
+  }
+  const plusworldFixture = '<meta property="og:title" content="Тест PLUSworld"><meta property="og:description" content="Описание"><time datetime="2026-07-14T11:44:00+03:00"></time>';
+  const plusworldParsed = parsePlusworldArticle(plusworldFixture, 'https://plusworld.ru/articles/73117/');
+  if (plusworldParsed.title !== 'Тест PLUSworld' || plusworldParsed.dateISO !== '2026-07-14') {
+    throw new Error('Самопроверка PLUSworld не пройдена');
+  }
   console.log('Самопроверка пройдена');
 }
 
@@ -362,6 +471,7 @@ if (process.argv.includes('--self-test')) {
 
   data.payments.items = payments;
   data.ai.items = ai;
+  await verifyPublishedLinks(data);
   await fs.writeFile(dataPath, `window.PAYDIGEST_DATA = ${JSON.stringify(data, null, 2)};\n`);
   await updateIndex();
   console.log(`Готово: платежи — ${payments.length}, ИИ — ${ai.length}; правовая библиотека сохранена без новостных дублей; период ${shortPeriod(periodStart, today)}`);

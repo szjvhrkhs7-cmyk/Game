@@ -395,12 +395,22 @@ function pause(milliseconds) {
 async function requestModel(config, body) {
   let lastError = '';
   for (let attempt = 1; attempt <= 4; attempt += 1) {
-    const response = await fetch(config.endpoint, {
-      method: 'POST',
-      headers: { authorization: `Bearer ${config.token}`, 'content-type': 'application/json' },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(90_000),
-    });
+    let response;
+    try {
+      response = await fetch(config.endpoint, {
+        method: 'POST',
+        headers: { authorization: `Bearer ${config.token}`, 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(120_000),
+      });
+    } catch (error) {
+      lastError = error?.message || String(error);
+      if (attempt === 4) break;
+      const delay = attempt * 7_000;
+      console.warn(`${config.provider} не ответил вовремя, повтор ${attempt}/3 через ${Math.round(delay / 1_000)} с`);
+      await pause(delay);
+      continue;
+    }
     if (response.ok) return response.json();
 
     const detail = (await response.text()).slice(0, 800);

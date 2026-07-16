@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#151613">
   <meta name="description" content="PayDigest — проверенные новости, правовая аналитика и рыночные сигналы в платежах и искусственном интеллекте.">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="PayDigest">
   <title>PayDigest — платежи, право и ИИ</title>
   <link rel="apple-touch-icon" sizes="180x180" href="/Game/payments-news/apple-touch-icon-v2.png">
@@ -17,9 +17,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260716-update-1">
-  <script src="data.js?v=29486129151" defer></script>
-  <script src="app.js" defer></script>
+  <link rel="stylesheet" href="styles.css?v=20260716-ui-2">
+  <script src="data.js?v=20260716-bootstrap" defer></script>
+  <script src="app.js?v=20260716-ui-2" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#content">К материалам</a>
@@ -28,10 +28,10 @@
       <img class="brand-mark" src="icon.svg" alt="" width="30" height="30">
       <span>PayDigest</span>
     </a>
-    <nav class="primary-nav" aria-label="Разделы">
-      <button class="nav-link is-active" data-section="payments">Платежи</button>
-      <button class="nav-link" data-section="law">Право</button>
-      <button class="nav-link" data-section="ai">ИИ</button>
+    <nav class="primary-nav" aria-label="Разделы" role="tablist">
+      <button class="nav-link is-active" type="button" role="tab" aria-selected="true" data-section="payments">Платежи</button>
+      <button class="nav-link" type="button" role="tab" aria-selected="false" data-section="law">Право</button>
+      <button class="nav-link" type="button" role="tab" aria-selected="false" data-section="ai">ИИ</button>
     </nav>
     <button class="icon-button" id="themeToggle" type="button" aria-label="Переключить цветовую тему">
       <span aria-hidden="true">◐</span>
@@ -40,30 +40,30 @@
 
   <main id="content">
     <section class="hero" aria-labelledby="pageTitle">
-      <p class="eyebrow">Профессиональный радар · 16 июля 2026</p>
+      <p class="eyebrow" id="heroEyebrow">Профессиональный радар · 15 июля 2026</p>
       <h1 id="pageTitle">Сигналы, которые<br><em>двигают рынок.</em></h1>
-      <p class="hero-copy">Русскоязычные новости платежного рынка и ИИ только за последние две недели — с 3 июля 2026 по 16 июля 2026. В приоритете редакционные и аналитические издания.</p>
+      <p class="hero-copy" id="heroCopy">Русскоязычные новости платежного рынка и ИИ только за последние две недели — с 1 по 15 июля 2026 года. В приоритете редакционные и аналитические издания.</p>
       <div class="hero-meta" aria-label="Параметры подборки">
         <span><b id="materialCount">0</b> материалов</span>
-        <span>период: 3–16 июля</span>
-        <span>аналитика в каждой новости</span>
+        <span id="periodChip">период: 1–15 июля</span>
+        <span id="analyticsChip">аналитика в каждой новости</span>
       </div>
       <div class="update-panel">
         <a class="update-button" href="https://github.com/szjvhrkhs7-cmyk/Game/actions/workflows/update-news.yml" target="_blank" rel="noopener noreferrer">
           <span class="update-button-icon" aria-hidden="true">↻</span>
           <span>Обновить выпуск</span>
         </a>
-        <p class="update-note">Откроется защищённый запуск в GitHub Actions. Публикация займёт несколько минут.</p>
+        <p class="update-note" id="updateNote">Откроется защищённый запуск в GitHub Actions. Публикация займёт несколько минут.</p>
       </div>
     </section>
 
     <section class="pulse" aria-labelledby="pulseTitle">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">Редакционный вывод</p>
+          <p class="eyebrow" id="pulseEyebrow">Редакционный вывод</p>
           <h2 id="pulseTitle">Пульс рынка</h2>
         </div>
-        <p>Сводка построена на материалах текущего выпуска и не является инвестиционной рекомендацией.</p>
+        <p id="pulseSubtitle">Сводка построена на материалах текущего выпуска и не является инвестиционной рекомендацией.</p>
       </div>
       <div class="pulse-grid">
         <article class="pulse-card pulse-payments">
@@ -93,6 +93,7 @@
           <kbd>⌘ K</kbd>
         </label>
       </div>
+      <p class="section-lead" id="sectionLead"></p>
       <div class="filters" id="filters" aria-label="Фильтры материалов"></div>
       <div class="result-meta"><span id="resultCount"></span><button id="clearFilters" type="button">Сбросить фильтры</button></div>
       <div class="card-grid" id="cardGrid" aria-live="polite"></div>
@@ -105,7 +106,7 @@
 
   <footer>
     <div><img class="brand-mark" src="icon.svg" alt="" width="30" height="30"><b>PayDigest</b></div>
-    <p>Новостной период: 3 июля 2026 – 16 июля 2026. Основные источники — русскоязычные СМИ и аналитические издания. У каждой новости есть редакционный анализ.</p>
+    <p id="footerCopy">Новостной период: 1–15 июля 2026 года. Основные источники — русскоязычные СМИ и аналитические издания. У каждой новости есть редакционный анализ.</p>
     <a href="#payments">Наверх ↑</a>
   </footer>
 </body>

@@ -1,7 +1,7 @@
 name: Update PayDigest news
 run-name: Обновление PayDigest · ${{ github.actor }}
 
-# Editorial policy v5: retry model timeouts; no promos, topic mixing or duplicate events.
+# Editorial policy v6: retain the last verified issue when the analysis provider is unavailable.
 
 on:
   schedule:

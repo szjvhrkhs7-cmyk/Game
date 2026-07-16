@@ -1,4 +1,5 @@
 import { CAT_PROFILES, LEVELS, validateLevels } from "./levels.js";
+import { calculatePhysicsSteps, getJumpKind } from "./physics.js";
 
 const VIEW_WIDTH = 540;
 const VIEW_HEIGHT = 960;
@@ -191,6 +192,10 @@ class SoundBank {
   }
 
   jump() { this.tone(310, 0.11, "square", 0.045, 190); }
+  doubleJump() {
+    this.tone(430, 0.09, "triangle", 0.045, 240);
+    setTimeout(() => this.tone(690, 0.11, "sine", 0.04, 120), 55);
+  }
   attack() { this.tone(520, 0.08, "triangle", 0.05, -220); }
   collect() { this.tone(760, 0.09, "sine", 0.055, 240); }
   hit() { this.tone(120, 0.18, "sawtooth", 0.06, -65); }
@@ -475,7 +480,7 @@ class Game {
 
   updateMenuProgress() {
     const suffix = this.progress.bestScore > 0 ? ` · рекорд ${this.progress.bestScore.toLocaleString("ru-RU")}` : "";
-    document.querySelector(".lead").textContent = `Четыре вертикальных уровня, два героя и один Золотой банан${suffix}. Выбирай ведущего и начинай погоню.`;
+    document.querySelector(".lead").textContent = `Четыре атмосферных уровня, двойной прыжок и один Золотой банан${suffix}. Выбирай ведущего и начинай погоню.`;
     ui.startButton.querySelector("span").textContent = this.progress.unlocked > 0
       ? `Продолжить с уровня ${LEVELS[this.progress.unlocked].id}`
       : "Начать погоню";
@@ -537,6 +542,9 @@ class Game {
       facing: 1,
       coyote: 0,
       jumpBuffer: 0,
+      jumpsUsed: 0,
+      squash: 0,
+      airSpin: 0,
       runFrame: 0
     };
     this.companion = {
@@ -576,9 +584,9 @@ class Game {
     this.updateGoal();
     this.particles = this.particles.filter((particle) => particle.update(dt));
 
-    const lookAhead = this.player.facing > 0 ? 158 : 78;
-    const targetCamera = this.player.x - VIEW_WIDTH * 0.34 + lookAhead;
-    this.cameraX = lerp(this.cameraX, clamp(targetCamera, 0, this.level.worldWidth - VIEW_WIDTH), 1 - Math.pow(0.0008, dt));
+    const velocityLook = clamp(this.player.vx * 0.34, -72, 92);
+    const targetCamera = this.player.x - VIEW_WIDTH * 0.35 + 118 + velocityLook;
+    this.cameraX = lerp(this.cameraX, clamp(targetCamera, 0, this.level.worldWidth - VIEW_WIDTH), 1 - Math.pow(0.0032, dt));
     this.updateHud();
   }
 
@@ -586,31 +594,32 @@ class Game {
     const profile = CAT_PROFILES[this.activeCat];
     const player = this.player;
     const move = Number(this.input.isDown("right")) - Number(this.input.isDown("left"));
-    const acceleration = player.onGround ? 1650 : 980;
+    const acceleration = player.onGround ? 2050 : 1320;
     const targetSpeed = move * profile.speed;
     player.vx += clamp(targetSpeed - player.vx, -acceleration * dt, acceleration * dt);
-    if (move === 0 && player.onGround) player.vx *= Math.pow(0.002, dt);
+    if (move === 0 && player.onGround) player.vx *= Math.pow(0.0007, dt);
     if (move !== 0) player.facing = Math.sign(move);
 
-    player.coyote = player.onGround ? 0.11 : Math.max(0, player.coyote - dt);
-    if (this.input.consume("jump")) player.jumpBuffer = 0.13;
+    player.coyote = player.onGround ? 0.14 : Math.max(0, player.coyote - dt);
+    if (this.input.consume("jump")) player.jumpBuffer = 0.16;
     else player.jumpBuffer = Math.max(0, player.jumpBuffer - dt);
 
-    if (player.jumpBuffer > 0 && player.coyote > 0) {
-      player.vy = -profile.jump;
-      player.onGround = false;
-      player.coyote = 0;
-      player.jumpBuffer = 0;
-      this.sound.jump();
-      this.burst(player.x + player.width / 2, player.y + player.height, "#f5e8c6", 6, 90, 0.35, 4);
+    if (player.jumpBuffer > 0) {
+      const jumpKind = getJumpKind(player.coyote, player.jumpsUsed);
+      if (jumpKind) this.performJump(jumpKind === "air");
     }
-    if (!this.input.isDown("jump") && player.vy < -260) player.vy += GRAVITY * 1.3 * dt;
+    if (!this.input.isDown("jump") && player.vy < -230) player.vy += GRAVITY * 1.45 * dt;
 
     if (this.input.consume("attack")) this.attack();
     if (this.input.consume("switch")) this.switchCat();
 
-    player.vy = Math.min(940, player.vy + GRAVITY * dt);
+    const nearApex = Math.abs(player.vy) < 115 && this.input.isDown("jump");
+    const gravityScale = nearApex ? 0.68 : player.vy > 0 ? 1.08 : 1;
+    player.vy = Math.min(940, player.vy + GRAVITY * gravityScale * dt);
     this.movePlayer(dt);
+    player.squash = Math.max(0, player.squash - dt * 5.5);
+    if (!player.onGround && player.jumpsUsed > 1) player.airSpin += dt * 7.5;
+    else player.airSpin = lerp(player.airSpin, 0, 1 - Math.pow(0.001, dt));
     player.runFrame += Math.abs(player.vx) * dt * 0.035;
 
     if (player.y > VIEW_HEIGHT + 130) this.loseHealth(true);
@@ -620,7 +629,41 @@ class Game {
     }
   }
 
+  performJump(isDoubleJump) {
+    const player = this.player;
+    const force = this.activeProfile.jump * (isDoubleJump ? 0.91 : 1);
+    player.vy = -force;
+    player.onGround = false;
+    player.coyote = 0;
+    player.jumpBuffer = 0;
+    player.jumpsUsed = isDoubleJump ? 2 : 1;
+    if (isDoubleJump) {
+      player.airSpin = 0.01;
+      this.sound.doubleJump();
+      this.burst(player.x + player.width / 2, player.y + player.height * 0.7, "#b9efff", 14, 175, 0.48, 4.5);
+      this.burst(player.x + player.width / 2, player.y + player.height * 0.7, "#ffffff", 7, 105, 0.35, 3);
+    } else {
+      this.sound.jump();
+      this.burst(player.x + player.width / 2, player.y + player.height, "#d5e8e7", 7, 100, 0.36, 4);
+    }
+  }
+
   movePlayer(dt) {
+    const player = this.player;
+    const steps = calculatePhysicsSteps(player.vx, player.vy, dt);
+    const stepDt = dt / steps;
+    let landed = false;
+    for (let step = 0; step < steps; step += 1) {
+      if (this.movePlayerStep(stepDt)) landed = true;
+    }
+    if (landed) {
+      player.onGround = true;
+      player.jumpsUsed = 0;
+      player.squash = 1;
+    }
+  }
+
+  movePlayerStep(dt) {
     const player = this.player;
     const previousX = player.x;
     player.x += player.vx * dt;
@@ -636,17 +679,20 @@ class Game {
     const previousBottom = player.y + player.height;
     player.y += player.vy * dt;
     player.onGround = false;
+    let landed = false;
     for (const platform of this.level.platforms) {
       if (!intersects(this.playerBounds, platform)) continue;
       if (player.vy >= 0 && previousBottom <= platform.y + 11) {
         player.y = platform.y - player.height;
         player.vy = 0;
         player.onGround = true;
+        landed = true;
       } else if (player.vy < 0) {
         player.y = platform.y + platform.height;
         player.vy = 20;
       }
     }
+    return landed;
   }
 
   updateCompanion(dt) {
@@ -680,6 +726,7 @@ class Game {
       if (stomping) {
         this.player.y = enemy.y - this.player.height;
         this.player.vy = -440;
+        this.player.jumpsUsed = 1;
         const defeated = enemy.damage(this.activeProfile.power);
         this.sound.stomp();
         this.burst(enemy.x + enemy.width / 2, enemy.y + 8, "#ffffff", 8, 190, 0.38, 5);
@@ -802,6 +849,9 @@ class Game {
     this.player.y = target.y;
     this.player.vx = 0;
     this.player.vy = 0;
+    this.player.jumpsUsed = 0;
+    this.player.coyote = 0;
+    this.player.jumpBuffer = 0;
     this.companion.x = this.player.x - 65;
     this.companion.y = this.player.y;
     this.cameraX = clamp(this.player.x - VIEW_WIDTH * 0.3, 0, this.level.worldWidth - VIEW_WIDTH);
@@ -965,9 +1015,12 @@ class Game {
       this.images[this.activeCat === 0 ? 1 : 0],
       this.companion.facing,
       this.companion.bounce,
-      this.companionAttack > 0.62,
-      companionAlpha,
-      true
+        this.companionAttack > 0.62,
+        companionAlpha,
+        true,
+        !this.player.onGround,
+        0,
+        0
     );
 
     const playerVisible = this.invincible <= 0 || Math.floor(this.invincible * 14) % 2 === 0;
@@ -983,7 +1036,9 @@ class Game {
         this.attackCooldown > 0.16,
         1,
         false,
-        !this.player.onGround
+        !this.player.onGround,
+        this.player.jumpsUsed > 1 ? this.player.airSpin : 0,
+        this.player.squash
       );
     }
 
@@ -1063,10 +1118,10 @@ class Game {
 
 function drawBackground(context, palette, cameraX, time) {
   const themes = {
-    kitchen: { top: "#78d8f1", bottom: "#e9f7df", far: "#bce3d0", near: "#87bfae" },
-    pantry: { top: "#343451", bottom: "#78614d", far: "#55465c", near: "#43364c" },
-    rooftop: { top: "#5f80da", bottom: "#f7b887", far: "#64769f", near: "#414d72" },
-    fortress: { top: "#262745", bottom: "#5b4a66", far: "#3f3e59", near: "#292a43" }
+    kitchen: { top: "#10192a", bottom: "#334851", far: "#243743", near: "#172731", glow: "#bce9d4" },
+    pantry: { top: "#121421", bottom: "#3b3342", far: "#282638", near: "#191a29", glow: "#d9c7a3" },
+    rooftop: { top: "#11172b", bottom: "#38435c", far: "#263249", near: "#172130", glow: "#d9efff" },
+    fortress: { top: "#0c0f1d", bottom: "#302b40", far: "#211f32", near: "#141522", glow: "#ccbdf2" }
   };
   const theme = themes[palette] || themes.kitchen;
   const gradient = context.createLinearGradient(0, 0, 0, VIEW_HEIGHT);
@@ -1077,69 +1132,144 @@ function drawBackground(context, palette, cameraX, time) {
 
   context.save();
   if (palette === "kitchen") {
-    context.fillStyle = "rgba(255,255,255,.28)";
-    for (let index = -1; index < 5; index += 1) {
-      const x = index * 170 - (cameraX * 0.08) % 170;
-      roundedRect(context, x, 110, 132, 210, 18);
+    // Огромные окна превращают знакомую кухню в сумеречный сказочный зал.
+    context.fillStyle = "rgba(180,225,217,.08)";
+    for (let index = -1; index < 4; index += 1) {
+      const x = index * 210 - (cameraX * 0.07) % 210;
+      context.beginPath();
+      context.moveTo(x + 18, 390);
+      context.lineTo(x + 18, 176);
+      context.quadraticCurveTo(x + 84, 76, x + 150, 176);
+      context.lineTo(x + 150, 390);
+      context.closePath();
       context.fill();
-      context.fillStyle = "rgba(111,177,190,.25)";
-      context.fillRect(x + 61, 110, 5, 210);
-      context.fillRect(x, 210, 132, 5);
-      context.fillStyle = "rgba(255,255,255,.28)";
+      context.strokeStyle = "rgba(191,235,226,.12)";
+      context.lineWidth = 4;
+      context.stroke();
     }
-    drawHills(context, cameraX * 0.14, 520, theme.far, 150);
-    context.fillStyle = "rgba(255,255,255,.42)";
-    context.beginPath();
-    context.arc(445, 108, 48, 0, TAU);
-    context.fill();
+    drawHills(context, cameraX * 0.13, 570, theme.far, 175);
+    drawHangingSilhouettes(context, cameraX * 0.18, "rgba(7,14,22,.36)");
   } else if (palette === "pantry") {
-    context.fillStyle = "rgba(18,14,29,.38)";
+    context.fillStyle = "rgba(8,9,17,.44)";
     for (let index = -1; index < 6; index += 1) {
-      const x = index * 130 - (cameraX * 0.1) % 130;
-      context.fillRect(x, 190, 96, 360);
-      context.fillStyle = "rgba(255,214,131,.15)";
-      roundedRect(context, x + 18, 245, 58, 92, 15);
+      const x = index * 138 - (cameraX * 0.09) % 138;
+      context.fillRect(x, 175, 102, 430);
+      context.fillStyle = "rgba(221,204,165,.1)";
+      roundedRect(context, x + 20, 235, 60, 100, 19);
       context.fill();
-      context.fillStyle = "rgba(18,14,29,.38)";
+      context.fillStyle = "rgba(8,9,17,.44)";
     }
-    context.fillStyle = "rgba(255,225,166,.16)";
     const glow = context.createRadialGradient(270, 220, 5, 270, 220, 260);
-    glow.addColorStop(0, "rgba(255,222,155,.28)");
-    glow.addColorStop(1, "rgba(255,222,155,0)");
+    glow.addColorStop(0, "rgba(222,205,165,.17)");
+    glow.addColorStop(1, "rgba(222,205,165,0)");
     context.fillStyle = glow;
     context.fillRect(0, 0, VIEW_WIDTH, 520);
   } else if (palette === "rooftop") {
-    context.fillStyle = "rgba(255,242,195,.72)";
+    const moonGlow = context.createRadialGradient(420, 148, 10, 420, 148, 120);
+    moonGlow.addColorStop(0, "rgba(222,243,255,.34)");
+    moonGlow.addColorStop(1, "rgba(222,243,255,0)");
+    context.fillStyle = moonGlow;
+    context.fillRect(280, 10, 260, 270);
+    context.fillStyle = "rgba(222,243,255,.78)";
     context.beginPath();
-    context.arc(425, 135, 65, 0, TAU);
+    context.arc(420, 145, 46, 0, TAU);
+    context.fill();
+    context.fillStyle = "rgba(17,23,43,.78)";
+    context.beginPath();
+    context.arc(440, 128, 43, 0, TAU);
     context.fill();
     drawClouds(context, cameraX * 0.08, time);
-    drawSkyline(context, cameraX * 0.14, 565, theme.far, 115);
-    drawSkyline(context, cameraX * 0.25, 650, theme.near, 170);
+    drawSkyline(context, cameraX * 0.13, 590, theme.far, 145);
+    drawSkyline(context, cameraX * 0.24, 675, theme.near, 205);
   } else {
-    context.fillStyle = "rgba(255,224,130,.3)";
+    context.fillStyle = "rgba(196,181,231,.08)";
     for (let index = -1; index < 5; index += 1) {
       const x = index * 190 - (cameraX * 0.09) % 190;
-      context.fillRect(x, 90, 134, 540);
-      context.fillStyle = "rgba(13,13,28,.37)";
+      context.fillRect(x, 75, 134, 570);
+      context.fillStyle = "rgba(5,6,14,.47)";
       context.beginPath();
       context.arc(x + 67, 310, 40, Math.PI, 0);
       context.lineTo(x + 107, 560);
       context.lineTo(x + 27, 560);
       context.closePath();
       context.fill();
-      context.fillStyle = "rgba(255,224,130,.3)";
-    }
-    context.fillStyle = "rgba(255,255,255,.13)";
-    for (let index = 0; index < 18; index += 1) {
-      const x = (index * 97 - cameraX * 0.18) % (VIEW_WIDTH + 80);
-      const y = 70 + (index * 131) % 430;
-      context.beginPath();
-      context.arc(x, y, 1.5 + (index % 3), 0, TAU);
-      context.fill();
+      context.fillStyle = "rgba(196,181,231,.08)";
     }
   }
+
+  drawAmbientMotes(context, cameraX, time, theme.glow);
+  drawFog(context, cameraX, time, theme.glow);
+  drawForegroundSilhouettes(context, cameraX, palette);
+
+  const vignette = context.createRadialGradient(VIEW_WIDTH / 2, VIEW_HEIGHT * 0.43, 180, VIEW_WIDTH / 2, VIEW_HEIGHT * 0.48, 570);
+  vignette.addColorStop(0, "rgba(3,6,14,0)");
+  vignette.addColorStop(0.72, "rgba(3,6,14,.12)");
+  vignette.addColorStop(1, "rgba(3,6,14,.62)");
+  context.fillStyle = vignette;
+  context.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
   context.restore();
+}
+
+function drawHangingSilhouettes(context, offset, color) {
+  context.strokeStyle = color;
+  context.lineCap = "round";
+  for (let index = -1; index < 7; index += 1) {
+    const x = index * 112 - offset % 112;
+    const length = 120 + (index % 3) * 44;
+    context.lineWidth = 5;
+    context.beginPath();
+    context.moveTo(x, 0);
+    context.bezierCurveTo(x + 9, length * 0.4, x - 8, length * 0.7, x + 4, length);
+    context.stroke();
+    context.beginPath();
+    context.ellipse(x + 4, length + 15, 12, 21, 0.1, 0, TAU);
+    context.fillStyle = color;
+    context.fill();
+  }
+}
+
+function drawAmbientMotes(context, cameraX, time, color) {
+  context.save();
+  context.fillStyle = color;
+  for (let index = 0; index < 28; index += 1) {
+    const span = VIEW_WIDTH + 100;
+    const x = ((index * 83 - cameraX * 0.14 + time * (4 + index % 4)) % span + span) % span - 50;
+    const y = 90 + (index * 137) % 610 + Math.sin(time * 0.8 + index) * 12;
+    context.globalAlpha = 0.08 + (index % 5) * 0.035;
+    context.beginPath();
+    context.arc(x, y, 1 + (index % 3) * 0.8, 0, TAU);
+    context.fill();
+  }
+  context.restore();
+}
+
+function drawFog(context, cameraX, time, color) {
+  context.save();
+  for (let index = -1; index < 4; index += 1) {
+    const x = index * 250 - ((cameraX * 0.2 - time * 9) % 250);
+    const y = 515 + (index % 2) * 92;
+    const fog = context.createRadialGradient(x, y, 10, x, y, 165);
+    fog.addColorStop(0, `${color}18`);
+    fog.addColorStop(1, `${color}00`);
+    context.fillStyle = fog;
+    context.fillRect(x - 180, y - 90, 360, 180);
+  }
+  context.restore();
+}
+
+function drawForegroundSilhouettes(context, cameraX, palette) {
+  const color = palette === "rooftop" ? "rgba(7,12,20,.46)" : "rgba(4,8,14,.56)";
+  context.fillStyle = color;
+  const offset = (cameraX * 0.44) % 150;
+  for (let index = -1; index < 6; index += 1) {
+    const x = index * 150 - offset;
+    context.beginPath();
+    context.moveTo(x, VIEW_HEIGHT);
+    context.bezierCurveTo(x + 8, 830, x + 34, 786, x + 52, 760);
+    context.bezierCurveTo(x + 45, 825, x + 78, 870, x + 94, VIEW_HEIGHT);
+    context.closePath();
+    context.fill();
+  }
 }
 
 function drawHills(context, offset, baseY, color, height) {
@@ -1156,7 +1286,7 @@ function drawHills(context, offset, baseY, color, height) {
 }
 
 function drawClouds(context, offset, time) {
-  context.fillStyle = "rgba(255,255,255,.46)";
+  context.fillStyle = "rgba(198,220,235,.13)";
   for (let index = -1; index < 4; index += 1) {
     const x = index * 240 - (offset + time * 4) % 240;
     const y = 190 + (index % 2) * 90;
@@ -1186,33 +1316,51 @@ function drawPlatform(context, platform, cameraX, palette) {
   const x = platform.x - cameraX;
   const y = platform.y;
   const theme = {
-    kitchen: ["#c9783e", "#8b4d2f", "#f1b05f"],
-    pantry: ["#8d6448", "#59402f", "#b98a5f"],
-    rooftop: ["#9f6073", "#683e58", "#d48d82"],
-    fortress: ["#69627b", "#403b53", "#91899c"]
-  }[palette] || ["#8b6545", "#503b30", "#c2915e"];
-  context.fillStyle = theme[1];
-  context.fillRect(x, y, platform.width, platform.height);
-  context.fillStyle = theme[0];
-  context.fillRect(x, y, platform.width, Math.min(18, platform.height));
-  context.fillStyle = theme[2];
-  context.fillRect(x, y, platform.width, 5);
-  context.strokeStyle = "rgba(34,21,24,.18)";
+    kitchen: ["#3f6360", "#17292f", "#8fb6a7", "#8ee1bd"],
+    pantry: ["#544a5a", "#211f2c", "#97879d", "#c1a9cf"],
+    rooftop: ["#405165", "#182631", "#839aaa", "#9edcf0"],
+    fortress: ["#494455", "#1a1925", "#81798d", "#b5a7d0"]
+  }[palette] || ["#46585a", "#1c272b", "#819799", "#9fc9bd"];
+
+  const bodyGradient = context.createLinearGradient(0, y, 0, Math.min(VIEW_HEIGHT, y + platform.height));
+  bodyGradient.addColorStop(0, theme[0]);
+  bodyGradient.addColorStop(0.18, theme[1]);
+  bodyGradient.addColorStop(1, "#0d141c");
+  context.fillStyle = bodyGradient;
+  roundedRect(context, x, y, platform.width, platform.height + 18, platform.kind === "ground" ? 7 : 13);
+  context.fill();
+
+  context.strokeStyle = theme[2];
+  context.lineWidth = 3;
+  context.beginPath();
+  context.moveTo(x + 5, y + 3);
+  for (let point = 0; point <= platform.width - 10; point += 22) {
+    context.quadraticCurveTo(x + point + 11, y - 2 - (point % 44 === 0 ? 3 : 0), x + point + 22, y + 3);
+  }
+  context.stroke();
+
+  context.strokeStyle = "rgba(6,10,17,.43)";
   context.lineWidth = 2;
-  const cell = platform.kind === "ground" ? 48 : 36;
+  const cell = platform.kind === "ground" ? 58 : 46;
   for (let tileX = Math.floor(platform.x / cell) * cell; tileX < platform.x + platform.width; tileX += cell) {
     const screenX = tileX - cameraX;
+    const depth = 35 + ((tileX / cell) % 3) * 11;
     context.beginPath();
-    context.moveTo(screenX, y + 18);
-    context.lineTo(screenX, Math.min(VIEW_HEIGHT, y + platform.height));
+    context.moveTo(screenX + 7, y + 15);
+    context.bezierCurveTo(screenX - 2, y + depth, screenX + 16, y + depth + 17, screenX + 4, y + depth + 35);
     context.stroke();
   }
-  for (let row = y + 18; row < Math.min(VIEW_HEIGHT, y + platform.height); row += 36) {
+
+  context.fillStyle = theme[3];
+  for (let sprig = 16; sprig < platform.width - 10; sprig += 64) {
+    const sprigX = x + sprig;
+    context.globalAlpha = 0.38;
     context.beginPath();
-    context.moveTo(x, row);
-    context.lineTo(x + platform.width, row);
-    context.stroke();
+    context.ellipse(sprigX, y - 4, 3, 9, -0.35, 0, TAU);
+    context.ellipse(sprigX + 7, y - 3, 3, 7, 0.45, 0, TAU);
+    context.fill();
   }
+  context.globalAlpha = 1;
 }
 
 function drawHazard(context, hazard, cameraX, time) {
@@ -1220,8 +1368,11 @@ function drawHazard(context, hazard, cameraX, time) {
   const count = Math.max(2, Math.floor(hazard.width / 24));
   const width = hazard.width / count;
   context.save();
-  context.fillStyle = "#dde2ea";
-  context.strokeStyle = "#6f7182";
+  const glow = context.createLinearGradient(0, hazard.y - 20, 0, hazard.y + 18);
+  glow.addColorStop(0, "#e8f7f5");
+  glow.addColorStop(1, "#6f7687");
+  context.fillStyle = glow;
+  context.strokeStyle = "#272b3a";
   context.lineWidth = 2;
   for (let index = 0; index < count; index += 1) {
     context.beginPath();
@@ -1240,13 +1391,15 @@ function drawBanana(context, x, y, scale = 1) {
   context.translate(x, y);
   context.scale(scale, scale);
   context.rotate(-0.35);
-  context.strokeStyle = "#8f5c19";
+  context.shadowColor = "rgba(255,220,91,.55)";
+  context.shadowBlur = 10;
+  context.strokeStyle = "#70501f";
   context.lineWidth = 11;
   context.lineCap = "round";
   context.beginPath();
   context.arc(0, -2, 17, 0.15, Math.PI * 0.94);
   context.stroke();
-  context.strokeStyle = "#ffd84d";
+  context.strokeStyle = "#f6d96a";
   context.lineWidth = 8;
   context.beginPath();
   context.arc(0, -2, 17, 0.15, Math.PI * 0.94);
@@ -1255,81 +1408,138 @@ function drawBanana(context, x, y, scale = 1) {
   context.beginPath();
   context.arc(17, 1, 2.8, 0, TAU);
   context.fill();
+  context.shadowBlur = 0;
   context.restore();
 }
 
-function drawCat(context, x, y, profile, image, facing, frame, attacking, alpha = 1, companion = false, airborne = false) {
+function drawCat(context, x, y, profile, image, facing, frame, attacking, alpha = 1, companion = false, airborne = false, airSpin = 0, squash = 0) {
   const walk = airborne ? 0 : Math.sin(frame * 1.8) * 3;
   const bob = airborne ? -3 : Math.abs(Math.sin(frame * 0.9)) * 2;
   const scale = companion ? 0.9 : 1;
+  const squashX = 1 + squash * 0.12;
+  const squashY = 1 - squash * 0.1;
   context.save();
   context.globalAlpha = alpha;
   context.translate(x + 28, y + 39 + bob);
-  context.scale(facing * scale, scale);
+  if (airSpin) context.rotate(Math.sin(airSpin) * 0.11);
+  context.scale(facing * scale * squashX, scale * squashY);
 
+  // Хвост и тело образуют один мягкий силуэт без жёстких пиксельных граней.
   context.strokeStyle = profile.furDark;
-  context.lineWidth = 8;
+  context.lineWidth = 9;
   context.lineCap = "round";
   context.beginPath();
-  context.moveTo(-17, 18);
-  context.quadraticCurveTo(-40, 8, -35, -15);
-  context.quadraticCurveTo(-31, -26, -21, -20);
+  context.moveTo(-18, 18);
+  context.bezierCurveTo(-43, 13, -43, -12, -33, -23);
+  context.bezierCurveTo(-25, -31, -20, -24, -23, -16);
   context.stroke();
 
-  context.fillStyle = profile.fur;
+  const bodyGradient = context.createLinearGradient(0, -5, 0, 52);
+  bodyGradient.addColorStop(0, profile.fur);
+  bodyGradient.addColorStop(1, profile.furDark);
+  context.fillStyle = bodyGradient;
   context.beginPath();
-  context.ellipse(0, 18, 24, 31, 0, 0, TAU);
+  context.moveTo(-21, 2);
+  context.bezierCurveTo(-29, 17, -26, 39, -20, 49);
+  context.quadraticCurveTo(-10, 45, -2, 50);
+  context.quadraticCurveTo(8, 44, 21, 49);
+  context.bezierCurveTo(27, 34, 30, 16, 20, 2);
+  context.closePath();
   context.fill();
+  context.strokeStyle = "rgba(9,16,29,.24)";
+  context.lineWidth = 2;
+  context.stroke();
 
+  // Лапы слегка запаздывают относительно корпуса, делая бег живее.
   context.strokeStyle = profile.furDark;
   context.lineWidth = 11;
   context.beginPath();
-  context.moveTo(-11, 35);
-  context.lineTo(-13 + walk, 49);
-  context.moveTo(11, 35);
-  context.lineTo(13 - walk, 49);
+  context.moveTo(-11, 34);
+  context.lineTo(-14 + walk, 49);
+  context.moveTo(11, 34);
+  context.lineTo(14 - walk, 49);
   context.stroke();
 
+  // Уши и наружный контур головы остаются кошачьими, а лицо вписано внутрь.
   context.fillStyle = profile.fur;
   context.beginPath();
-  context.moveTo(-22, -8);
-  context.lineTo(-17, -38);
-  context.lineTo(-2, -22);
-  context.lineTo(4, -38);
-  context.lineTo(22, -7);
+  context.moveTo(-23, -8);
+  context.lineTo(-18, -39);
+  context.lineTo(-3, -24);
+  context.quadraticCurveTo(0, -26, 4, -24);
+  context.lineTo(18, -39);
+  context.lineTo(24, -7);
+  context.bezierCurveTo(26, 8, 16, 17, 0, 18);
+  context.bezierCurveTo(-16, 17, -26, 8, -23, -8);
   context.closePath();
   context.fill();
-  context.fillStyle = "rgba(255,190,181,.75)";
-  context.beginPath();
-  context.moveTo(-17, -14);
-  context.lineTo(-14, -31);
-  context.lineTo(-6, -19);
-  context.closePath();
-  context.fill();
-  context.beginPath();
-  context.moveTo(6, -19);
-  context.lineTo(3, -31);
-  context.lineTo(15, -13);
-  context.closePath();
-  context.fill();
-
-  context.save();
-  context.beginPath();
-  context.arc(0, -8, 20, 0, TAU);
-  context.clip();
-  context.scale(facing, 1);
-  context.drawImage(image, -22, -30, 44, 44);
-  context.restore();
-  context.strokeStyle = "rgba(255,255,255,.76)";
-  context.lineWidth = 2.5;
-  context.beginPath();
-  context.arc(0, -8, 20, 0, TAU);
+  context.strokeStyle = profile.furDark;
+  context.lineWidth = 3;
   context.stroke();
 
-  context.strokeStyle = profile.scarf;
-  context.lineWidth = 7;
+  context.fillStyle = "rgba(225,154,157,.72)";
   context.beginPath();
-  context.arc(0, 6, 19, 0.18, Math.PI - 0.18);
+  context.moveTo(-17, -17);
+  context.lineTo(-15, -33);
+  context.lineTo(-7, -22);
+  context.closePath();
+  context.fill();
+  context.beginPath();
+  context.moveTo(8, -22);
+  context.lineTo(15, -33);
+  context.lineTo(18, -16);
+  context.closePath();
+  context.fill();
+
+  // Фотография не рисуется отдельным кругом: маска повторяет лоб, щёки и подбородок.
+  context.save();
+  context.beginPath();
+  context.moveTo(-19, -17);
+  context.bezierCurveTo(-17, -28, -9, -31, 0, -31);
+  context.bezierCurveTo(11, -31, 19, -25, 20, -14);
+  context.bezierCurveTo(22, -1, 16, 11, 6, 15);
+  context.bezierCurveTo(1, 18, -5, 17, -11, 13);
+  context.bezierCurveTo(-20, 7, -22, -5, -19, -17);
+  context.closePath();
+  context.clip();
+  context.scale(facing, 1);
+  context.filter = "saturate(.72) contrast(1.08) brightness(.88)";
+  context.drawImage(image, -24, -33, 48, 51);
+  context.filter = "none";
+  const edge = context.createRadialGradient(0, -8, 9, 0, -8, 27);
+  edge.addColorStop(0.5, "rgba(0,0,0,0)");
+  edge.addColorStop(0.78, `${profile.fur}22`);
+  edge.addColorStop(1, profile.fur);
+  context.fillStyle = edge;
+  context.fillRect(-28, -36, 56, 58);
+  context.restore();
+
+  context.strokeStyle = profile.furDark;
+  context.lineWidth = 2.3;
+  context.beginPath();
+  context.moveTo(-19, -17);
+  context.bezierCurveTo(-17, -28, -9, -31, 0, -31);
+  context.bezierCurveTo(11, -31, 19, -25, 20, -14);
+  context.bezierCurveTo(22, -1, 16, 11, 6, 15);
+  context.bezierCurveTo(1, 18, -5, 17, -11, 13);
+  context.bezierCurveTo(-20, 7, -22, -5, -19, -17);
+  context.stroke();
+
+  context.strokeStyle = "rgba(235,242,239,.72)";
+  context.lineWidth = 1.2;
+  [-1, 4].forEach((offset) => {
+    context.beginPath();
+    context.moveTo(-17, offset);
+    context.lineTo(-31, offset - 3);
+    context.moveTo(17, offset);
+    context.lineTo(31, offset - 3);
+    context.stroke();
+  });
+
+  context.strokeStyle = profile.scarf;
+  context.lineWidth = 6;
+  context.beginPath();
+  context.arc(0, 9, 19, 0.18, Math.PI - 0.18);
   context.stroke();
 
   context.strokeStyle = profile.furDark;

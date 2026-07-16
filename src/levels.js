@@ -2,63 +2,71 @@ const ground = (segments, y = 790) => segments.map(([x, width]) => ({ x, y, widt
 const ledge = (x, y, width, kind = "ledge") => ({ x, y, width, height: 24, kind });
 const mouse = (x, y = 744, type = "walker") => ({ x, y, type });
 const bananaLine = (x, y, count, gap = 54) => Array.from({ length: count }, (_, index) => ({ x: x + index * gap, y }));
+const bananaArc = (x, y, count, gap = 52, lift = 84) => Array.from({ length: count }, (_, index) => ({
+  x: x + index * gap,
+  y: y - Math.sin((index / Math.max(1, count - 1)) * Math.PI) * lift
+}));
 
 export const LEVELS = [
   {
     id: "1-1",
-    title: "Кухня на рассвете",
-    intro: "Мыши выскочили из хлебницы. Догоним их, пока не остыл завтрак!",
+    title: "Сумеречная кухня",
+    intro: "Мыши погасили лампы и скрылись среди высоких шкафов. Свет банана укажет путь.",
     palette: "kitchen",
     worldWidth: 4200,
     spawn: { x: 120, y: 690 },
     goal: { x: 4000, y: 682 },
     platforms: [
       ...ground([[0, 900], [1030, 820], [1970, 1050], [3150, 1050]]),
-      ledge(420, 650, 210, "table"),
-      ledge(1180, 660, 180, "shelf"),
-      ledge(1460, 570, 240, "shelf"),
-      ledge(2140, 650, 220, "table"),
-      ledge(2490, 555, 190, "shelf"),
-      ledge(3290, 665, 200, "table"),
-      ledge(3620, 570, 220, "shelf")
+      ledge(380, 660, 250, "table"),
+      ledge(1110, 675, 220, "shelf"),
+      ledge(1390, 600, 250, "shelf"),
+      ledge(1665, 530, 150, "shelf"),
+      ledge(2070, 670, 250, "table"),
+      ledge(2390, 600, 220, "shelf"),
+      ledge(2670, 525, 190, "shelf"),
+      ledge(3230, 675, 250, "table"),
+      ledge(3540, 605, 240, "shelf")
     ],
-    hazards: [{ x: 1760, y: 772, width: 82 }, { x: 2920, y: 772, width: 82 }],
+    hazards: [{ x: 1780, y: 772, width: 62 }, { x: 2940, y: 772, width: 62 }],
     enemies: [
       mouse(650), mouse(1240, 614, "runner"), mouse(1620, 524),
       mouse(2220, 604, "runner"), mouse(2700, 744, "jumper"),
       mouse(3410, 619), mouse(3720, 524, "runner")
     ],
     bananas: [
-      ...bananaLine(240, 700, 5), ...bananaLine(1100, 610, 4),
-      ...bananaLine(2020, 704, 5), ...bananaLine(2470, 500, 4),
-      ...bananaLine(3200, 710, 6)
+      ...bananaLine(210, 700, 4), ...bananaArc(760, 690, 6, 52, 92),
+      ...bananaArc(1320, 565, 6, 50, 74), ...bananaArc(1800, 690, 6, 54, 96),
+      ...bananaArc(2400, 560, 6, 50, 78), ...bananaArc(2890, 690, 6, 54, 92),
+      ...bananaArc(3520, 565, 6, 50, 72)
     ],
     checkpoints: [{ x: 2040, y: 712 }]
   },
   {
     id: "1-2",
-    title: "Тайная кладовая",
-    intro: "За банками варенья спрятан мышиный тоннель. Здесь темно, но пахнет бананами.",
+    title: "Шепчущая кладовая",
+    intro: "За банками варенья дышит старый тоннель. В тумане слышны только лапки и далёкий звон.",
     palette: "pantry",
     worldWidth: 4700,
     spawn: { x: 100, y: 690 },
     goal: { x: 4500, y: 682 },
     platforms: [
       ...ground([[0, 720], [850, 650], [1620, 960], [2720, 650], [3500, 1200]]),
-      ledge(250, 600, 210, "crate"),
-      ledge(920, 670, 180, "crate"),
-      ledge(1160, 555, 220, "crate"),
-      ledge(1730, 640, 220, "crate"),
-      ledge(2060, 535, 210, "crate"),
-      ledge(2390, 625, 150, "crate"),
-      ledge(2800, 590, 220, "crate"),
-      ledge(3100, 490, 170, "crate"),
-      ledge(3620, 640, 230, "crate"),
-      ledge(4020, 545, 230, "crate")
+      ledge(220, 635, 240, "crate"),
+      ledge(900, 680, 210, "crate"),
+      ledge(1160, 605, 230, "crate"),
+      ledge(1430, 530, 145, "crate"),
+      ledge(1700, 665, 250, "crate"),
+      ledge(2020, 585, 230, "crate"),
+      ledge(2310, 520, 190, "crate"),
+      ledge(2780, 640, 240, "crate"),
+      ledge(3070, 560, 190, "crate"),
+      ledge(3580, 665, 260, "crate"),
+      ledge(3900, 585, 240, "crate")
     ],
     hazards: [
-      { x: 720, y: 772, width: 130 }, { x: 1490, y: 772, width: 130 },
-      { x: 2580, y: 772, width: 140 }, { x: 3370, y: 772, width: 130 }
+      { x: 750, y: 772, width: 80 }, { x: 1520, y: 772, width: 80 },
+      { x: 2610, y: 772, width: 90 }, { x: 3400, y: 772, width: 80 }
     ],
     enemies: [
       mouse(470, 554, "runner"), mouse(980, 624), mouse(1280, 509, "jumper"),
@@ -67,36 +75,40 @@ export const LEVELS = [
       mouse(3710, 594, "runner"), mouse(4140, 499, "armored")
     ],
     bananas: [
-      ...bananaLine(130, 675, 4), ...bananaLine(870, 610, 5),
-      ...bananaLine(1670, 700, 6), ...bananaLine(2770, 535, 5),
-      ...bananaLine(3530, 700, 6), ...bananaLine(4020, 485, 4)
+      ...bananaArc(110, 700, 6, 52, 80), ...bananaArc(820, 660, 6, 52, 92),
+      ...bananaArc(1500, 690, 6, 54, 100), ...bananaArc(2180, 570, 6, 50, 76),
+      ...bananaArc(2680, 680, 7, 52, 105), ...bananaArc(3500, 690, 6, 54, 96),
+      ...bananaArc(4010, 550, 5, 50, 72)
     ],
     checkpoints: [{ x: 1750, y: 712 }, { x: 3540, y: 712 }]
   },
   {
     id: "2-1",
-    title: "Крыши большого дома",
-    intro: "След ведёт наверх. Ветер сильный, трубы горячие, а мыши надели каски.",
+    title: "Лунные крыши",
+    intro: "Над трубами плывёт белый туман. Второй прыжок поможет пересечь самые глубокие пролёты.",
     palette: "rooftop",
     worldWidth: 5200,
     spawn: { x: 100, y: 650 },
     goal: { x: 5000, y: 612 },
     platforms: [
       ...ground([[0, 610], [760, 700], [1600, 610], [2360, 720], [3250, 650], [4070, 1130]], 735),
-      ledge(230, 585, 180, "roof"),
-      ledge(820, 565, 210, "roof"),
-      ledge(1130, 470, 190, "roof"),
-      ledge(1660, 565, 190, "roof"),
-      ledge(2420, 540, 220, "roof"),
-      ledge(2750, 445, 190, "roof"),
-      ledge(3330, 555, 210, "roof"),
-      ledge(4140, 520, 230, "roof"),
-      ledge(4520, 420, 210, "roof")
+      ledge(210, 610, 220, "roof"),
+      ledge(800, 610, 230, "roof"),
+      ledge(1080, 535, 210, "roof"),
+      ledge(1320, 465, 150, "roof"),
+      ledge(1630, 600, 230, "roof"),
+      ledge(2390, 590, 240, "roof"),
+      ledge(2680, 510, 210, "roof"),
+      ledge(2940, 435, 160, "roof"),
+      ledge(3290, 605, 240, "roof"),
+      ledge(4110, 575, 250, "roof"),
+      ledge(4420, 500, 220, "roof"),
+      ledge(4690, 425, 150, "roof")
     ],
     hazards: [
-      { x: 610, y: 717, width: 150 }, { x: 1460, y: 717, width: 140 },
-      { x: 2210, y: 717, width: 150 }, { x: 3080, y: 717, width: 170 },
-      { x: 3900, y: 717, width: 170 }
+      { x: 640, y: 717, width: 90 }, { x: 1490, y: 717, width: 90 },
+      { x: 2240, y: 717, width: 90 }, { x: 3120, y: 717, width: 100 },
+      { x: 3940, y: 717, width: 100 }
     ],
     enemies: [
       mouse(310, 539, "jumper"), mouse(880, 519, "runner"),
@@ -106,37 +118,40 @@ export const LEVELS = [
       mouse(4590, 374, "runner")
     ],
     bananas: [
-      ...bananaLine(80, 620, 5), ...bananaLine(790, 510, 5),
-      ...bananaLine(1620, 510, 5), ...bananaLine(2380, 485, 5),
-      ...bananaLine(3290, 500, 5), ...bananaLine(4100, 465, 6)
+      ...bananaArc(70, 650, 6, 52, 84), ...bananaArc(700, 620, 7, 52, 112),
+      ...bananaArc(1440, 610, 7, 52, 110), ...bananaArc(2240, 610, 7, 52, 118),
+      ...bananaArc(3110, 620, 7, 52, 120), ...bananaArc(3930, 600, 7, 52, 115),
+      ...bananaArc(4550, 485, 5, 48, 68)
     ],
     checkpoints: [{ x: 1650, y: 657 }, { x: 3300, y: 657 }]
   },
   {
     id: "2-2",
-    title: "Сырная крепость",
-    intro: "Барон Мышильдо ждёт в крепости. Пора вернуть Золотой банан домой.",
+    title: "Сырная цитадель",
+    intro: "За чёрными воротами ждёт Барон Мышильдо. Древний свет Золотого банана уже близко.",
     palette: "fortress",
     worldWidth: 5700,
     spawn: { x: 110, y: 690 },
     goal: { x: 5500, y: 682 },
     platforms: [
       ...ground([[0, 780], [930, 700], [1780, 760], [2700, 650], [3520, 700], [4380, 1320]]),
-      ledge(310, 630, 190, "stone"),
-      ledge(1020, 610, 190, "stone"),
-      ledge(1320, 505, 190, "stone"),
-      ledge(1880, 620, 210, "stone"),
-      ledge(2220, 510, 190, "stone"),
-      ledge(2780, 590, 210, "stone"),
-      ledge(3090, 480, 190, "stone"),
-      ledge(3590, 625, 210, "stone"),
-      ledge(3950, 510, 200, "stone"),
-      ledge(4480, 620, 200, "stone")
+      ledge(280, 665, 230, "stone"),
+      ledge(990, 655, 230, "stone"),
+      ledge(1270, 580, 210, "stone"),
+      ledge(1510, 505, 145, "stone"),
+      ledge(1840, 650, 250, "stone"),
+      ledge(2160, 570, 220, "stone"),
+      ledge(2730, 635, 250, "stone"),
+      ledge(3040, 555, 210, "stone"),
+      ledge(3300, 485, 150, "stone"),
+      ledge(3550, 655, 250, "stone"),
+      ledge(3890, 575, 230, "stone"),
+      ledge(4430, 650, 250, "stone")
     ],
     hazards: [
-      { x: 780, y: 772, width: 150 }, { x: 1630, y: 772, width: 150 },
-      { x: 2540, y: 772, width: 160 }, { x: 3350, y: 772, width: 170 },
-      { x: 4220, y: 772, width: 160 }
+      { x: 810, y: 772, width: 90 }, { x: 1660, y: 772, width: 90 },
+      { x: 2570, y: 772, width: 100 }, { x: 3390, y: 772, width: 100 },
+      { x: 4250, y: 772, width: 100 }
     ],
     enemies: [
       mouse(380, 584, "armored"), mouse(1080, 564, "runner"),
@@ -147,9 +162,10 @@ export const LEVELS = [
     ],
     boss: { x: 5000, y: 690, type: "baron", health: 8 },
     bananas: [
-      ...bananaLine(130, 690, 5), ...bananaLine(980, 555, 5),
-      ...bananaLine(1810, 565, 5), ...bananaLine(2740, 535, 5),
-      ...bananaLine(3520, 570, 6), ...bananaLine(4400, 565, 5)
+      ...bananaArc(110, 700, 6, 52, 82), ...bananaArc(860, 680, 7, 52, 110),
+      ...bananaArc(1660, 690, 7, 52, 115), ...bananaArc(2500, 670, 7, 52, 108),
+      ...bananaArc(3340, 690, 7, 52, 118), ...bananaArc(4180, 675, 7, 52, 106),
+      ...bananaLine(4920, 650, 5, 50)
     ],
     checkpoints: [{ x: 1830, y: 712 }, { x: 3560, y: 712 }, { x: 4450, y: 712 }]
   }

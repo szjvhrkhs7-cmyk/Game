@@ -23,6 +23,18 @@ test("у финального уровня есть босс", () => {
   assert.ok(finalLevel.boss.health >= 8);
 });
 
+test("разрывы основного маршрута подходят для плавного темпа", () => {
+  for (const level of LEVELS) {
+    const ground = level.platforms
+      .filter((platform) => platform.kind === "ground")
+      .sort((left, right) => left.x - right.x);
+    for (let index = 1; index < ground.length; index += 1) {
+      const gap = ground[index].x - (ground[index - 1].x + ground[index - 1].width);
+      assert.ok(gap <= 180, `${level.id}: разрыв ${gap}px слишком велик`);
+    }
+  }
+});
+
 test("профили двух героев отличаются", () => {
   assert.equal(CAT_PROFILES.length, 2);
   assert.notEqual(CAT_PROFILES[0].image, CAT_PROFILES[1].image);

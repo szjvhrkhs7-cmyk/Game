@@ -1,10 +1,11 @@
-const CACHE_NAME = "banana-cat-bros-v1";
+const CACHE_NAME = "banana-cat-bros-v2";
 const ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./src/game.js",
   "./src/levels.js",
+  "./src/physics.js",
   "./manifest.webmanifest",
   "./assets/icon.svg",
   "./assets/icon-192.png",

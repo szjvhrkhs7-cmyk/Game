@@ -2,7 +2,24 @@
   'use strict';
 
   let DATA = window.PAYDIGEST_DATA;
-  if (!DATA) return;
+  if (!isValidData(DATA)) return;
+
+  function isValidData(data) {
+    const sections = ['payments', 'law', 'ai'];
+    return Boolean(data) && sections.every((name) => {
+      const current = data[name];
+      return current && Array.isArray(current.filters) && Array.isArray(current.items) && current.items.length <= 15
+        && current.items.every((item) => {
+          try {
+            const url = new URL(String(item.url || ''));
+            return url.protocol === 'https:' && typeof item.title === 'string' && typeof item.summary === 'string'
+              && typeof item.impact === 'string' && typeof item.source === 'string' && Array.isArray(item.tags);
+          } catch {
+            return false;
+          }
+        });
+    });
+  }
 
   const SECTION_UI = {
     payments: {
@@ -73,11 +90,34 @@
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (symbol) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
   }[symbol]));
-  const safeUrl = (value) => /^https?:\/\//i.test(String(value || '')) ? escapeHtml(value) : '#';
+  const safeUrl = (value) => {
+    try {
+      const url = new URL(String(value || ''));
+      return url.protocol === 'https:' ? escapeHtml(url.href) : '#';
+    } catch {
+      return '#';
+    }
+  };
+
+  function storageGet(key, fallback = '') {
+    try {
+      return localStorage.getItem(key) ?? fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  function storageSet(key, value) {
+    try {
+      localStorage.setItem(key, value);
+    } catch {
+      // Интерфейс остаётся работоспособным, даже если хранилище браузера заблокировано.
+    }
+  }
 
   function loadSaved() {
     try {
-      const value = JSON.parse(localStorage.getItem('paydigest-saved') || '[]');
+      const value = JSON.parse(storageGet('paydigest-saved', '[]'));
       return new Set(Array.isArray(value) ? value : []);
     } catch {
       return new Set();
@@ -98,7 +138,7 @@
 
   function setTheme(theme) {
     document.documentElement.dataset.theme = theme;
-    localStorage.setItem('paydigest-theme', theme);
+    storageSet('paydigest-theme', theme);
     $('meta[name="theme-color"]').content = theme === 'dark' ? '#151613' : '#f4f2ed';
     $('#themeToggle').setAttribute('aria-pressed', String(theme === 'dark'));
   }
@@ -215,7 +255,7 @@
     script.async = true;
     script.onload = () => {
       const fresh = window.PAYDIGEST_DATA;
-      if (fresh && fresh.payments && fresh.law && fresh.ai) {
+      if (isValidData(fresh)) {
         DATA = fresh;
         render();
         setRefreshStatus('Свежий выпуск загружен', 'ready');
@@ -261,7 +301,7 @@
     if (!button) return;
     const id = button.dataset.save;
     saved.has(id) ? saved.delete(id) : saved.add(id);
-    localStorage.setItem('paydigest-saved', JSON.stringify([...saved]));
+    storageSet('paydigest-saved', JSON.stringify([...saved]));
     button.classList.toggle('is-saved', saved.has(id));
     button.textContent = saved.has(id) ? '★' : '☆';
     button.setAttribute('aria-label', saved.has(id) ? 'Удалить из сохранённых' : 'Сохранить материал');
@@ -315,7 +355,7 @@
     }
   });
 
-  const preferred = localStorage.getItem('paydigest-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  const preferred = storageGet('paydigest-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
   setTheme(preferred);
   render();
   refreshData({ force: true });

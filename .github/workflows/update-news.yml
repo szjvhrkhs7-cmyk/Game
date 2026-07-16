@@ -1,6 +1,8 @@
 name: Update PayDigest news
 run-name: Обновление PayDigest · ${{ github.actor }}
 
+# Editorial policy v2: strict topic separation and one publication per event.
+
 on:
   schedule:
     - cron: '7,37 * * * *'

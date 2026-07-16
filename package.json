@@ -1,0 +1,10 @@
+{
+  "name": "banana-cat-bros",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --check src/game.js && node --check src/levels.js && node --check sw.js",
+    "test": "node --test tests/*.test.js"
+  }
+}

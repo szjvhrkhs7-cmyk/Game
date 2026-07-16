@@ -1,11 +1,8 @@
-name: Deploy PayDigest to GitHub Pages
-
-run-name: Publish PayDigest icon
+name: Deploy Banana Cat Bros
 
 on:
   push:
     branches:
-      - gh-pages
       - claude/mario-maker-style-game-7p670u
   workflow_dispatch:
 
@@ -15,29 +12,37 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  group: banana-cat-pages
+  cancel-in-progress: true
 
 jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate game
+        run: npm test && npm run check
+
   deploy:
+    needs: verify
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout gh-pages
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: gh-pages
-
-      - name: Setup Pages
+      - name: Configure Pages
         uses: actions/configure-pages@v5
-
-      - name: Upload artifact
+      - name: Upload game
         uses: actions/upload-pages-artifact@v3
         with:
           path: .
-
-      - name: Deploy to GitHub Pages
+      - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4

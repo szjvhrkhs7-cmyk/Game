@@ -39,13 +39,6 @@ const SECTION_RULES = {
     pattern: /искусственн\w* интеллект|нейросет|(?:^|\W)ии(?:\W|$)|(?:^|\W)ai(?:\W|$)|chatgpt|\bgpt\b|deepseek|gigachat|claude|машинн\w* обуч|алгоритм|дипфейк|генеративн|языков\w* модел|робот/iu,
     tags: ['Рынок', 'Бизнес', 'Регулирование', 'Инфраструктура', 'Исследования', 'Капитал', 'Безопасность', 'Продукты'],
   },
-  law: {
-    label: 'право и регулирование платёжных услуг и ИИ',
-    windowDays: 90,
-    minimum: 6,
-    pattern: /закон|правил\w*|регулир|(?:^|[^а-яё])суд(?:[^а-яё]|$)|лиценз|штраф|комплаенс|персональн\w* данн|цифров(?:ой|ого) рубл|стейблкоин|антифрод|банк россии|центробанк|(?:^|[^а-яё])цб(?:[^а-яё]|$)|плат[её]ж|мошенн|искусственн\w* интеллект|нейросет/iu,
-    tags: ['Россия', 'Мир', 'Цифровой рубль', 'Антифрод', 'Стейблкоины', 'ИИ', 'Банки', 'Персональные данные', 'Лицензирование'],
-  },
 };
 
 function startOfUtcDay(date) {
@@ -360,18 +353,16 @@ if (process.argv.includes('--self-test')) {
   await selfTest();
 } else {
   const data = await loadData();
-  const feedItems = await collectFeeds();
+  const legalUrls = new Set(data.law.items.map((item) => cleanUrl(item.url)));
+  const feedItems = (await collectFeeds()).filter((item) => !legalUrls.has(cleanUrl(item.url)));
   const paymentsCandidates = candidatesFor('payments', feedItems, data.payments.items);
   const aiCandidates = candidatesFor('ai', feedItems, data.ai.items);
-  const lawCandidates = candidatesFor('law', feedItems, data.law.items);
   const payments = await analyzeSection('payments', paymentsCandidates);
   const ai = await analyzeSection('ai', aiCandidates);
-  const law = await analyzeSection('law', lawCandidates);
 
   data.payments.items = payments;
   data.ai.items = ai;
-  data.law.items = law;
   await fs.writeFile(dataPath, `window.PAYDIGEST_DATA = ${JSON.stringify(data, null, 2)};\n`);
   await updateIndex();
-  console.log(`Готово: платежи — ${payments.length}, право — ${law.length}, ИИ — ${ai.length}, новостной период ${shortPeriod(periodStart, today)}`);
+  console.log(`Готово: платежи — ${payments.length}, ИИ — ${ai.length}; правовая библиотека сохранена без новостных дублей; период ${shortPeriod(periodStart, today)}`);
 }

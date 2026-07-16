@@ -24,12 +24,13 @@ const FEEDS = [
 
 const PLUSWORLD_HOME = 'https://plusworld.ru/';
 const BLOCKED_SOURCES = new Set(['CNews']);
-const PAYMENT_TOPIC_PATTERN = /плат[её]ж[\p{L}-]*|оплат[\p{L}-]*|(?:^|[^\p{L}\p{N}])сбп(?:[^\p{L}\p{N}]|$)|эквайр[\p{L}-]*|финтех[\p{L}-]*|перевод[\p{L}-]*|банковск[\p{L}-]*\s+карт[\p{L}-]*|цифров[\p{L}-]*\s+рубл[\p{L}-]*|(?:^|[^\p{L}\p{N}])qr(?:[^\p{L}\p{N}]|$)|биометр[\p{L}-]*\s+оплат[\p{L}-]*|кошел[её]к|стейблкоин[\p{L}-]*|(?:^|[^\p{L}\p{N}])cbdc(?:[^\p{L}\p{N}]|$)|антифрод[\p{L}-]*|мошеннич[\p{L}-]*|нспк|транзакц[\p{L}-]*|процессинг[\p{L}-]*|банкомат[\p{L}-]*|расч[её]тн[\p{L}-]*\s+систем[\p{L}-]*|плат[её]жн[\p{L}-]*\s+инфраструктур[\p{L}-]*/iu;
+const PAYMENT_TOPIC_PATTERN = /плат[её]ж[\p{L}-]*|(?:^|[^\p{L}\p{N}])оплат[\p{L}-]*|(?:^|[^\p{L}\p{N}])сбп(?:[^\p{L}\p{N}]|$)|эквайр[\p{L}-]*|финтех[\p{L}-]*|перевод[\p{L}-]*|банковск[\p{L}-]*\s+карт[\p{L}-]*|цифров[\p{L}-]*\s+рубл[\p{L}-]*|(?:^|[^\p{L}\p{N}])qr(?:[^\p{L}\p{N}]|$)|биометр[\p{L}-]*\s+оплат[\p{L}-]*|кошел[её]к|стейблкоин[\p{L}-]*|(?:^|[^\p{L}\p{N}])cbdc(?:[^\p{L}\p{N}]|$)|антифрод[\p{L}-]*|мошеннич[\p{L}-]*|нспк|транзакц[\p{L}-]*|процессинг[\p{L}-]*|банкомат[\p{L}-]*|расч[её]тн[\p{L}-]*\s+систем[\p{L}-]*|плат[её]жн[\p{L}-]*\s+инфраструктур[\p{L}-]*/iu;
 const AI_TOPIC_PATTERN = /искусственн[\p{L}-]*\s+интеллект[\p{L}-]*|нейросет[\p{L}-]*|(?:^|[^\p{L}\p{N}])ии(?:[^\p{L}\p{N}]|$)|(?:^|[^\p{L}\p{N}])ai(?:[^\p{L}\p{N}]|$)|chatgpt|(?:^|[^\p{L}\p{N}])gpt(?:[^\p{L}\p{N}]|$)|deepseek|gigachat|claude|машинн[\p{L}-]*\s+обуч[\p{L}-]*|дипфейк[\p{L}-]*|генеративн[\p{L}-]*|языков[\p{L}-]*\s+модел[\p{L}-]*|(?:^|[^\p{L}\p{N}])llm(?:[^\p{L}\p{N}]|$)|(?:ии|ai)[\s-]*агент[\p{L}-]*/iu;
 const PAYMENT_CONTEXT_PATTERN = /банк[\p{L}-]*|финанс[\p{L}-]*|плат[её]ж[\p{L}-]*|оплат[\p{L}-]*|перевод[\p{L}-]*|сч[её]т[\p{L}-]*|наличн[\p{L}-]*|(?:^|[^\p{L}\p{N}])сбп(?:[^\p{L}\p{N}]|$)/iu;
 const FRAUD_ONLY_PATTERN = /антифрод[\p{L}-]*|мошеннич[\p{L}-]*/iu;
 const AI_ENUMERATION_PATTERN = /(?:(?:основн|ключев)[\p{L}-]*\s+)?тем[\p{L}-]*[^.]*,[^.]*(?:^|[^\p{L}\p{N}])(?:ии|ai)(?:[^\p{L}\p{N}]|$)/iu;
 const TITLE_STOP_WORDS = new Set(['будут', 'после', 'через', 'между', 'против', 'области', 'сфере', 'новый', 'новая', 'новые', 'может', 'могут', 'предлагается']);
+const SHORT_EVENT_TOKENS = new Set(['ии', 'ai', 'сбп', 'qr']);
 
 const SECTION_RULES = {
   payments: {
@@ -296,8 +297,8 @@ function existingCandidates(items = []) {
 function titleTokens(value = '') {
   return new Set(value.toLocaleLowerCase('ru-RU')
     .replaceAll('ё', 'е')
-    .match(/[а-яa-z0-9]{4,}/giu)
-    ?.filter((word) => !TITLE_STOP_WORDS.has(word))
+    .match(/[а-яa-z0-9]{2,}/giu)
+    ?.filter((word) => (word.length >= 4 || SHORT_EVENT_TOKENS.has(word)) && !TITLE_STOP_WORDS.has(word))
     .map((word) => word.slice(0, 6)) || []);
 }
 
@@ -314,7 +315,7 @@ function relevantCandidate(section, item) {
   const title = item.title || '';
   const text = `${title} ${item.description || ''}`;
   if (!SECTION_RULES[section].pattern.test(title)) return false;
-  if (section === 'payments' && FRAUD_ONLY_PATTERN.test(text) && !PAYMENT_CONTEXT_PATTERN.test(text)) return false;
+  if (section === 'payments' && FRAUD_ONLY_PATTERN.test(title) && !PAYMENT_CONTEXT_PATTERN.test(title)) return false;
   if (section === 'ai' && AI_ENUMERATION_PATTERN.test(title)) return false;
   return true;
 }
@@ -511,8 +512,10 @@ async function selfTest() {
   if (!AI_TOPIC_PATTERN.test('Новая нейросеть помогает бизнесу внедрять ИИ-агентов')) throw new Error('Самопроверка тематики ИИ не пройдена');
   if (!sameEvent('Блокировку снятия денег в банкоматах предложили оставить на усмотрение банков', 'Банки предложили оставить блокировку снятия наличных в банкоматах на их усмотрение')) throw new Error('Самопроверка событийных дублей не пройдена');
   if (!sameEvent('Россия и КНР создали организацию по сотрудничеству в области ИИ', 'Россия стала соучредителем Всемирной организации сотрудничества в сфере ИИ')) throw new Error('Самопроверка дублей ИИ не пройдена');
+  if (!sameEvent('Россия вошла в число стран-учредителей Всемирной организации по ИИ', 'Россия и КНР создали организацию по сотрудничеству в области ИИ')) throw new Error('Самопроверка коротких токенов ИИ не пройдена');
   if (relevantCandidate('payments', { title: 'Продажу предоплаченных SIM-карт запретят в рамках Антифрода', description: 'Правила оформления мобильных номеров' })) throw new Error('Самопроверка контекста платежей не пройдена');
   if (relevantCandidate('ai', { title: 'Темами саммита будут расчеты, ИИ и продовольствие', description: '' })) throw new Error('Самопроверка контекста ИИ не пройдена');
+  if (PAYMENT_TOPIC_PATTERN.test('Вступил в силу новый порядок ведения реестра налогоплательщиков')) throw new Error('Самопроверка границ слова «оплата» не пройдена');
   if (cleanUrl('https://www.rbc.ru/finances/example') !== 'https://amp.rbc.ru/rbcnews/finances/example') {
     throw new Error('Самопроверка нормализации РБК не пройдена');
   }

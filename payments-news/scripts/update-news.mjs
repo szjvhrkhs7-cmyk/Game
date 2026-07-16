@@ -393,8 +393,9 @@ function pause(milliseconds) {
 }
 
 async function requestModel(config, body) {
+  const maxAttempts = 2;
   let lastError = '';
-  for (let attempt = 1; attempt <= 4; attempt += 1) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     let response;
     try {
       response = await fetch(config.endpoint, {
@@ -405,9 +406,9 @@ async function requestModel(config, body) {
       });
     } catch (error) {
       lastError = error?.message || String(error);
-      if (attempt === 4) break;
+      if (attempt === maxAttempts) break;
       const delay = attempt * 7_000;
-      console.warn(`${config.provider} не ответил вовремя, повтор ${attempt}/3 через ${Math.round(delay / 1_000)} с`);
+      console.warn(`${config.provider} не ответил вовремя, повтор ${attempt}/${maxAttempts - 1} через ${Math.round(delay / 1_000)} с`);
       await pause(delay);
       continue;
     }
@@ -416,10 +417,10 @@ async function requestModel(config, body) {
     const detail = (await response.text()).slice(0, 800);
     lastError = `${response.status} ${response.statusText}: ${detail}`;
     const retryable = response.status === 429 || response.status >= 500;
-    if (!retryable || attempt === 4) break;
+    if (!retryable || attempt === maxAttempts) break;
     const retryAfter = Number(response.headers.get('retry-after'));
     const delay = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1_000 : attempt * 7_000;
-    console.warn(`${config.provider} временно недоступен (${response.status}), повтор ${attempt}/3 через ${Math.round(delay / 1_000)} с`);
+    console.warn(`${config.provider} временно недоступен (${response.status}), повтор ${attempt}/${maxAttempts - 1} через ${Math.round(delay / 1_000)} с`);
     await pause(delay);
   }
   throw new Error(`${config.provider}: ${lastError}`);
@@ -498,6 +499,34 @@ ${JSON.stringify(payloadCandidates)}`;
   return items;
 }
 
+function lastVerifiedItems(section, candidates, currentItems) {
+  const candidateUrls = new Set(candidates.map((item) => cleanUrl(item.url)));
+  const eventTitles = [];
+  const items = currentItems.filter((item) => {
+    const url = cleanUrl(item.url);
+    const text = `${item.title} ${item.summary}`;
+    if (!candidateUrls.has(url) || !SECTION_RULES[section].pattern.test(text)) return false;
+    if (EVENT_PROMO_PATTERN.test(item.title) || eventTitles.some((title) => sameEvent(title, item.title))) return false;
+    eventTitles.push(item.title);
+    return true;
+  }).slice(0, SECTION_RULES[section].target).map((item, index) => ({
+    ...item,
+    featured: index === 0,
+  }));
+  if (!items.length) throw new Error(`Нет последнего проверенного выпуска для резервного режима ${section}`);
+  return items;
+}
+
+async function analyzeWithFallback(section, candidates, currentItems) {
+  try {
+    return await analyzeSection(section, candidates);
+  } catch (error) {
+    const fallback = lastVerifiedItems(section, candidates, currentItems);
+    console.warn(`• ${SECTION_RULES[section].label}: модель недоступна, сохранён последний проверенный выпуск (${fallback.length}); ${error?.message || error}`);
+    return fallback;
+  }
+}
+
 async function updateIndex() {
   let html = await fs.readFile(indexPath, 'utf8');
   const startFull = ruDate(periodStart);
@@ -549,8 +578,8 @@ if (process.argv.includes('--self-test')) {
   const paymentsCandidates = candidatesFor('payments', feedItems, data.payments.items, legalUrls);
   const paymentCandidateUrls = new Set(paymentsCandidates.map((item) => cleanUrl(item.url)));
   const aiCandidates = candidatesFor('ai', feedItems, data.ai.items, new Set([...legalUrls, ...paymentCandidateUrls]));
-  const payments = await analyzeSection('payments', paymentsCandidates);
-  const ai = await analyzeSection('ai', aiCandidates);
+  const payments = await analyzeWithFallback('payments', paymentsCandidates, data.payments.items);
+  const ai = await analyzeWithFallback('ai', aiCandidates, data.ai.items);
 
   data.payments.items = payments;
   data.ai.items = ai;

@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const DATA = window.PAYDIGEST_DATA;
+  let DATA = window.PAYDIGEST_DATA;
   if (!DATA) return;
 
   const SECTION_UI = {
@@ -14,7 +14,7 @@
       impactLabel: 'Почему это важно · аналитика рынка',
       resultNoun: 'новостей',
       search: 'Поиск по платежам',
-      note: 'Откроется защищённый запуск в GitHub Actions. Публикация займёт несколько минут.',
+      note: 'Свежая версия загружается при каждом открытии. Редакционная сборка выполняется автоматически каждые 30 минут.',
     },
     law: {
       hero: 'Право без<br><em>новостного шума.</em>',
@@ -36,7 +36,7 @@
       impactLabel: 'Почему это важно · аналитика рынка ИИ',
       resultNoun: 'новостей',
       search: 'Поиск по ИИ',
-      note: 'Откроется защищённый запуск в GitHub Actions. Публикация займёт несколько минут.',
+      note: 'Свежая версия загружается при каждом открытии. Редакционная сборка выполняется автоматически каждые 30 минут.',
     },
   };
 
@@ -88,6 +88,8 @@
   let section = allowed.has(location.hash.slice(1)) ? location.hash.slice(1) : 'payments';
   let filter = 'Все';
   let query = '';
+  let refreshing = false;
+  let lastRefreshAttempt = 0;
 
   const grid = $('#cardGrid');
   const filters = $('#filters');
@@ -194,6 +196,44 @@
     renderFilters();
   }
 
+  function setRefreshStatus(message, state = '') {
+    const status = $('#refreshStatus');
+    const badge = status?.closest('.freshness-badge');
+    if (status) status.textContent = message;
+    if (badge) badge.dataset.state = state;
+  }
+
+  function refreshData({ force = false } = {}) {
+    const now = Date.now();
+    if (refreshing || (!force && now - lastRefreshAttempt < 60_000)) return;
+    refreshing = true;
+    lastRefreshAttempt = now;
+    setRefreshStatus('Проверяем свежий выпуск…', 'loading');
+
+    const script = document.createElement('script');
+    script.src = `data.js?fresh=${now}`;
+    script.async = true;
+    script.onload = () => {
+      const fresh = window.PAYDIGEST_DATA;
+      if (fresh && fresh.payments && fresh.law && fresh.ai) {
+        DATA = fresh;
+        render();
+        setRefreshStatus('Свежий выпуск загружен', 'ready');
+      } else {
+        setRefreshStatus('Показана последняя сохранённая версия', 'offline');
+      }
+      refreshing = false;
+      script.remove();
+    };
+    script.onerror = () => {
+      window.PAYDIGEST_DATA = DATA;
+      refreshing = false;
+      script.remove();
+      setRefreshStatus('Показана последняя сохранённая версия', 'offline');
+    };
+    document.head.append(script);
+  }
+
   function switchSection(next, updateHash = true) {
     if (!allowed.has(next) || next === section) return;
     section = next;
@@ -254,6 +294,14 @@
     }
   });
 
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted) refreshData({ force: true });
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') refreshData();
+  });
+
   document.addEventListener('keydown', (event) => {
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
       event.preventDefault();
@@ -270,4 +318,5 @@
   const preferred = localStorage.getItem('paydigest-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
   setTheme(preferred);
   render();
+  refreshData({ force: true });
 })();

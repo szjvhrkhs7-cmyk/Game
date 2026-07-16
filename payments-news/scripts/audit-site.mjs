@@ -6,9 +6,10 @@ import { fileURLToPath } from 'node:url';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const siteDir = path.resolve(here, '..');
 const sections = ['payments', 'law', 'ai'];
-const paymentPattern = /плат[её]ж[\p{L}-]*|оплат[\p{L}-]*|(?:^|[^\p{L}\p{N}])сбп(?:[^\p{L}\p{N}]|$)|эквайр[\p{L}-]*|финтех[\p{L}-]*|перевод[\p{L}-]*|банковск[\p{L}-]*\s+карт[\p{L}-]*|цифров[\p{L}-]*\s+рубл[\p{L}-]*|(?:^|[^\p{L}\p{N}])qr(?:[^\p{L}\p{N}]|$)|биометр[\p{L}-]*\s+оплат[\p{L}-]*|кошел[её]к|стейблкоин[\p{L}-]*|(?:^|[^\p{L}\p{N}])cbdc(?:[^\p{L}\p{N}]|$)|антифрод[\p{L}-]*|мошеннич[\p{L}-]*|нспк|транзакц[\p{L}-]*|процессинг[\p{L}-]*|банкомат[\p{L}-]*|расч[её]тн[\p{L}-]*\s+систем[\p{L}-]*|плат[её]жн[\p{L}-]*\s+инфраструктур[\p{L}-]*/iu;
+const paymentPattern = /плат[её]ж[\p{L}-]*|(?:^|[^\p{L}\p{N}])оплат[\p{L}-]*|(?:^|[^\p{L}\p{N}])сбп(?:[^\p{L}\p{N}]|$)|эквайр[\p{L}-]*|финтех[\p{L}-]*|перевод[\p{L}-]*|банковск[\p{L}-]*\s+карт[\p{L}-]*|цифров[\p{L}-]*\s+рубл[\p{L}-]*|(?:^|[^\p{L}\p{N}])qr(?:[^\p{L}\p{N}]|$)|биометр[\p{L}-]*\s+оплат[\p{L}-]*|кошел[её]к|стейблкоин[\p{L}-]*|(?:^|[^\p{L}\p{N}])cbdc(?:[^\p{L}\p{N}]|$)|антифрод[\p{L}-]*|мошеннич[\p{L}-]*|нспк|транзакц[\p{L}-]*|процессинг[\p{L}-]*|банкомат[\p{L}-]*|расч[её]тн[\p{L}-]*\s+систем[\p{L}-]*|плат[её]жн[\p{L}-]*\s+инфраструктур[\p{L}-]*/iu;
 const aiPattern = /искусственн[\p{L}-]*\s+интеллект[\p{L}-]*|нейросет[\p{L}-]*|(?:^|[^\p{L}\p{N}])ии(?:[^\p{L}\p{N}]|$)|(?:^|[^\p{L}\p{N}])ai(?:[^\p{L}\p{N}]|$)|chatgpt|(?:^|[^\p{L}\p{N}])gpt(?:[^\p{L}\p{N}]|$)|deepseek|gigachat|claude|машинн[\p{L}-]*\s+обуч[\p{L}-]*|дипфейк[\p{L}-]*|генеративн[\p{L}-]*|языков[\p{L}-]*\s+модел[\p{L}-]*|(?:^|[^\p{L}\p{N}])llm(?:[^\p{L}\p{N}]|$)|(?:ии|ai)[\s-]*агент[\p{L}-]*/iu;
 const titleStopWords = new Set(['будут', 'после', 'через', 'между', 'против', 'области', 'сфере', 'новый', 'новая', 'новые', 'может', 'могут', 'предлагается']);
+const shortEventTokens = new Set(['ии', 'ai', 'сбп', 'qr']);
 
 function fail(message) {
   throw new Error(`Аудит PayDigest: ${message}`);
@@ -23,8 +24,9 @@ function secureUrl(value) {
 }
 
 function titleTokens(value = '') {
-  return new Set(value.toLocaleLowerCase('ru-RU').replaceAll('ё', 'е').match(/[а-яa-z0-9]{4,}/giu)
-    ?.filter((word) => !titleStopWords.has(word)).map((word) => word.slice(0, 6)) || []);
+  return new Set(value.toLocaleLowerCase('ru-RU').replaceAll('ё', 'е').match(/[а-яa-z0-9]{2,}/giu)
+    ?.filter((word) => (word.length >= 4 || shortEventTokens.has(word)) && !titleStopWords.has(word))
+    .map((word) => word.slice(0, 6)) || []);
 }
 
 function sameEvent(first, second) {

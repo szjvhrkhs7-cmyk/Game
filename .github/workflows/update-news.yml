@@ -2,6 +2,8 @@ name: Update PayDigest news
 run-name: Обновление PayDigest · ${{ github.actor }}
 
 on:
+  schedule:
+    - cron: '7,37 * * * *'
   workflow_dispatch:
     inputs:
       publish:
@@ -74,18 +76,18 @@ jobs:
           fi
 
       - name: Настроить GitHub Pages
-        if: ${{ github.event_name == 'push' || inputs.publish }}
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.publish }}
         uses: actions/configure-pages@v5
 
       - name: Собрать публикацию
-        if: ${{ github.event_name == 'push' || inputs.publish }}
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.publish }}
         uses: actions/upload-pages-artifact@v3
         with:
           name: github-pages-${{ github.run_attempt }}
           path: .
 
       - name: Опубликовать сайт
-        if: ${{ github.event_name == 'push' || inputs.publish }}
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.publish }}
         id: deployment
         uses: actions/deploy-pages@v4
         with:

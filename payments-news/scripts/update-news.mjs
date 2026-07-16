@@ -13,7 +13,6 @@ const periodStart = new Date(today.getTime() - 13 * DAY);
 
 const FEEDS = [
   ['РИА Новости', 'https://ria.ru/export/rss2/archive/index.xml'],
-  ['CNews', 'https://www.cnews.ru/inc/rss/news.xml'],
   ['Коммерсантъ', 'https://www.kommersant.ru/RSS/news.xml'],
   ['Интерфакс', 'https://www.interfax.ru/rss.asp'],
   ['РБК', 'https://rssexport.rbc.ru/rbcnews/news/30/full.rss'],
@@ -24,6 +23,7 @@ const FEEDS = [
 ];
 
 const PLUSWORLD_HOME = 'https://plusworld.ru/';
+const BLOCKED_SOURCES = new Set(['CNews']);
 
 const SECTION_RULES = {
   payments: {
@@ -289,6 +289,7 @@ function candidatesFor(section, feedItems, existingItems) {
     return pattern.test(searchable);
   });
   const merged = dedupe([...newItems, ...existingCandidates(existingItems)])
+    .filter((item) => !BLOCKED_SOURCES.has(item.source))
     .filter((item) => pattern.test(item.title))
     .filter((item) => inSectionPeriod(new Date(`${item.dateISO}T00:00:00Z`), section))
     .sort((a, b) => b.dateISO.localeCompare(a.dateISO));

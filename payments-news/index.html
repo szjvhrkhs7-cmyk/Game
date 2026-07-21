@@ -6,19 +6,19 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self'; font-src 'self' data:; img-src 'self' data:; connect-src 'self'; manifest-src 'self'; form-action 'none'; frame-src 'none'; upgrade-insecure-requests">
   <meta name="referrer" content="no-referrer">
   <meta name="theme-color" content="#151613">
-  <meta name="description" content="PayDigest — проверенные новости, правовая аналитика и рыночные сигналы в платежах и искусственном интеллекте.">
+  <meta name="description" content="PayDigest — проверенные новости и аналитика о платежных услугах и искусственном интеллекте за последние пять дней.">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="PayDigest">
-  <title>PayDigest — платежи, право и ИИ</title>
+  <title>PayDigest — платежи и ИИ</title>
   <link rel="apple-touch-icon" sizes="180x180" href="/Game/payments-news/apple-touch-icon-v2.png">
   <link rel="apple-touch-icon-precomposed" sizes="180x180" href="/Game/payments-news/apple-touch-icon-precomposed.png">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="shortcut icon" type="image/png" sizes="192x192" href="/Game/payments-news/icon-192.png">
-  <link rel="manifest" href="manifest.webmanifest?v=2">
-  <link rel="stylesheet" href="styles.css?v=20260716-audit-1">
-  <script src="data.js?v=29502497323" defer></script>
-  <script src="app.js?v=20260716-audit-1" defer></script>
+  <link rel="manifest" href="manifest.webmanifest?v=3">
+  <link rel="stylesheet" href="styles.css?v=20260721-five-days-1">
+  <script src="data.js?v=20260721-five-days-1" defer></script>
+  <script src="app.js?v=20260721-five-days-1" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#content">К материалам</a>
@@ -29,7 +29,6 @@
     </a>
     <nav class="primary-nav" aria-label="Разделы" role="tablist">
       <button class="nav-link is-active" type="button" role="tab" aria-selected="true" data-section="payments">Платежи</button>
-      <button class="nav-link" type="button" role="tab" aria-selected="false" data-section="law">Право</button>
       <button class="nav-link" type="button" role="tab" aria-selected="false" data-section="ai">ИИ</button>
     </nav>
     <button class="icon-button" id="themeToggle" type="button" aria-label="Переключить цветовую тему">
@@ -39,20 +38,20 @@
 
   <main id="content">
     <section class="hero" aria-labelledby="pageTitle">
-      <p class="eyebrow" id="heroEyebrow">Профессиональный радар · 16 июля 2026</p>
+      <p class="eyebrow" id="heroEyebrow">Профессиональный радар · 21 июля 2026</p>
       <h1 id="pageTitle">Сигналы, которые<br><em>двигают рынок.</em></h1>
-      <p class="hero-copy" id="heroCopy">Русскоязычные новости платежного рынка и ИИ только за последние две недели — с 3 июля 2026 по 16 июля 2026. В приоритете редакционные и аналитические издания.</p>
+      <p class="hero-copy" id="heroCopy">Проверенные новости платежного рынка за последние пять дней — с 17 по 21 июля 2026 года.</p>
       <div class="hero-meta" aria-label="Параметры подборки">
         <span><b id="materialCount">0</b> материалов</span>
-        <span id="periodChip">период: 3–16 июля</span>
+        <span id="periodChip">новости за 5 дней</span>
         <span id="analyticsChip">аналитика в каждой новости</span>
       </div>
       <div class="update-panel">
         <div class="freshness-badge" role="status" aria-live="polite">
           <span class="freshness-dot" aria-hidden="true"></span>
-          <span id="refreshStatus">Загружаем свежий выпуск…</span>
+          <span id="refreshStatus">Загружаем актуальный выпуск…</span>
         </div>
-        <p class="update-note" id="updateNote">Свежая версия загружается при каждом открытии. Редакционная сборка выполняется автоматически каждые 30 минут.</p>
+        <p class="update-note" id="updateNote">Выпуск сформирован по публикациям за 17–21 июля 2026 года.</p>
       </div>
     </section>
 
@@ -65,18 +64,8 @@
         <p id="pulseSubtitle">Сводка построена на материалах текущего выпуска и не является инвестиционной рекомендацией.</p>
       </div>
       <div class="pulse-grid">
-        <article class="pulse-card pulse-payments">
-          <div class="pulse-top"><span>Платежи</span><b>Инфраструктура</b></div>
-          <p class="pulse-value">Платежи консолидируются вокруг инфраструктурных платформ</p>
-          <p>Крупные сделки, цифровой евро, СБП и новые стейблкоиновые сети показывают одну тенденцию: ценность смещается к масштабу, совместимости и контролю платежного маршрута.</p>
-          <div class="pulse-sources"><span>Источники анализа</span></div>
-        </article>
-        <article class="pulse-card pulse-ai">
-          <div class="pulse-top"><span>ИИ</span><b>Продуктивность</b></div>
-          <p class="pulse-value">Агенты выходят из чата в рабочие процессы</p>
-          <p>Цена интеллекта снижается, а ценность перемещается в интеграцию, надежность и доступ к корпоративным данным. Побеждают продукты, которые завершают работу, а не только отвечают.</p>
-          <div class="pulse-sources"><span>Источники анализа</span></div>
-        </article>
+        <article class="pulse-card pulse-payments"></article>
+        <article class="pulse-card pulse-ai"></article>
       </div>
     </section>
 
@@ -105,15 +94,15 @@
 
   <footer>
     <div><img class="brand-mark" src="icon.svg" alt="" width="30" height="30"><b>PayDigest</b></div>
-    <p id="footerCopy">Новостной период: 3 июля 2026 – 16 июля 2026. Основные источники — русскоязычные СМИ и аналитические издания. У каждой новости есть редакционный анализ.</p>
+    <p id="footerCopy">Новостной период: 17–21 июля 2026 года. В выпуске оставлены только разделы о платежах и применении ИИ в финансовых услугах.</p>
     <a href="#payments">Наверх ↑</a>
     <nav class="source-directory" aria-label="Источники мониторинга">
       <span>Источники мониторинга</span>
+      <a href="https://www.reuters.com/business/finance/" target="_blank" rel="noopener noreferrer">Reuters ↗</a>
+      <a href="https://paymentexpert.com/" target="_blank" rel="noopener noreferrer">Payment Expert ↗</a>
+      <a href="https://www.fintechfutures.com/" target="_blank" rel="noopener noreferrer">FinTech Futures ↗</a>
+      <a href="https://www.bankingdive.com/" target="_blank" rel="noopener noreferrer">Banking Dive ↗</a>
       <a href="https://plusworld.ru/" target="_blank" rel="noopener noreferrer">PLUSworld ↗</a>
-      <a href="https://pravo.ru/" target="_blank" rel="noopener noreferrer">Право.ru ↗</a>
-      <a href="https://www.kommersant.ru/" target="_blank" rel="noopener noreferrer">Коммерсантъ ↗</a>
-      <a href="https://www.rbc.ru/" target="_blank" rel="noopener noreferrer">РБК ↗</a>
-      <a href="https://bosfera.ru/" target="_blank" rel="noopener noreferrer">Банковское обозрение ↗</a>
     </nav>
   </footer>
 </body>

@@ -1,95 +1,110 @@
 (() => {
   'use strict';
 
+  const REQUIRED_SECTIONS = ['payments', 'ai'];
   let DATA = window.PAYDIGEST_DATA;
   if (!isValidData(DATA)) return;
-
-  function isValidData(data) {
-    const sections = ['payments', 'law', 'ai'];
-    return Boolean(data) && sections.every((name) => {
-      const current = data[name];
-      return current && Array.isArray(current.filters) && Array.isArray(current.items) && current.items.length <= 15
-        && current.items.every((item) => {
-          try {
-            const url = new URL(String(item.url || ''));
-            return url.protocol === 'https:' && typeof item.title === 'string' && typeof item.summary === 'string'
-              && typeof item.impact === 'string' && typeof item.source === 'string' && Array.isArray(item.tags);
-          } catch {
-            return false;
-          }
-        });
-    });
-  }
 
   const SECTION_UI = {
     payments: {
       hero: 'Сигналы, которые<br><em>двигают рынок.</em>',
-      copy: 'Русскоязычные новости платёжного рынка только за последние две недели. В приоритете редакционные и аналитические издания.',
-      period: 'новости за 14 дней',
+      copy: 'Проверенные новости платежного рынка за последние пять дней — с 17 по 21 июля 2026 года.',
+      period: 'новости за 5 дней',
       analytics: 'рыночный вывод в каждом материале',
-      lead: 'События платёжного рынка, инфраструктуры и финтеха. В карточке отделены факты публикации от редакционного вывода.',
+      lead: 'Платежная инфраструктура, карты, кошельки, мгновенные переводы и антифрод. Факты публикации отделены от редакционного вывода.',
       impactLabel: 'Почему это важно · аналитика рынка',
-      resultNoun: 'новостей',
+      resultNoun: 'материалов',
       search: 'Поиск по платежам',
-      note: 'Свежая версия загружается при каждом открытии. Редакционная сборка выполняется автоматически каждые 30 минут.',
-    },
-    law: {
-      hero: 'Право без<br><em>новостного шума.</em>',
-      copy: 'Отдельная библиотека правовых статей и действующих материалов о регулировании платёжных услуг, цифровых активов и ИИ.',
-      period: 'действующие нормы и позиции',
-      analytics: 'правовой вывод в каждом материале',
-      lead: 'Это не повтор новостей: здесь собраны нормативные документы, профессиональные разборы и практические правовые последствия для банков и технологических компаний.',
-      impactLabel: 'Правовой вывод · применение и риски',
-      resultNoun: 'правовых материалов',
-      search: 'Поиск по правовой библиотеке',
-      note: 'Автообновление работает для новостей. Правовая библиотека сохраняется отдельно, чтобы нормативные материалы не заменялись новостными дублями.',
+      note: 'Выпуск сформирован по публикациям за 17–21 июля 2026 года. При открытии приложение проверяет актуальную версию файла данных.'
     },
     ai: {
-      hero: 'ИИ, который<br><em>меняет рынок.</em>',
-      copy: 'Русскоязычные новости и аналитика рынка искусственного интеллекта только за последние две недели.',
-      period: 'новости за 14 дней',
-      analytics: 'рыночный вывод в каждом материале',
-      lead: 'Продукты, капитал, инфраструктура и регулирование ИИ — с кратким разбором влияния на рынок и бизнес-модели.',
-      impactLabel: 'Почему это важно · аналитика рынка ИИ',
-      resultNoun: 'новостей',
+      hero: 'ИИ, который<br><em>меняет финансы.</em>',
+      copy: 'Новости применения искусственного интеллекта в банках и платежах за последние пять дней — с 17 по 21 июля 2026 года.',
+      period: 'новости за 5 дней',
+      analytics: 'практический вывод в каждом материале',
+      lead: 'Агентные платежи, банковские операции, антифрод, управление моделями и измеримый экономический эффект.',
+      impactLabel: 'Почему это важно · аналитика ИИ',
+      resultNoun: 'материалов',
       search: 'Поиск по ИИ',
-      note: 'Свежая версия загружается при каждом открытии. Редакционная сборка выполняется автоматически каждые 30 минут.',
-    },
+      note: 'Выпуск сформирован по публикациям за 17–21 июля 2026 года. При открытии приложение проверяет актуальную версию файла данных.'
+    }
   };
 
   const PULSE_UI = {
     payments: {
-      title: 'Пульс платёжного рынка',
-      subtitle: 'Два редакционных вывода по материалам текущего выпуска. Не являются инвестиционной рекомендацией.',
+      title: 'Пульс платежного рынка',
+      subtitle: 'Два вывода по материалам текущего пятидневного выпуска. Не являются инвестиционной рекомендацией.',
       cards: [
-        { tone: 'pulse-payments', label: 'Платежи', badge: 'Инфраструктура', title: 'Контроль платёжного маршрута становится главным активом', copy: 'Банки, процессинговые платформы и цифровой рубль сближаются на уровне API. Конкуренция смещается от отдельного продукта к устойчивости и совместимости всей инфраструктуры.' },
-        { tone: 'pulse-ai', label: 'Платежи', badge: 'Антифрод', title: 'Защита клиента становится частью экономики продукта', copy: 'Компенсации, блокировки и новые обязанности банков превращают антифрод из технической функции в фактор стоимости сервиса, доверия и клиентского опыта.' },
-      ],
-    },
-    law: {
-      title: 'Правовой фокус',
-      subtitle: 'Практические последствия норм и профессиональных правовых разборов. Не является юридической консультацией.',
-      cards: [
-        { tone: 'pulse-law', label: 'Право', badge: 'Платёжные услуги', title: 'Регулирование переходит от принципов к операционным обязанностям', copy: 'Сроки подключения, правила возмещения и требования к инфраструктуре должны превращаться в конкретные изменения договоров, контролей и клиентских сценариев.' },
-        { tone: 'pulse-law-alt', label: 'Право', badge: 'ИИ и данные', title: 'Ответственность смещается к данным, лицензиям и контролю модели', copy: 'Для ИИ-проектов ключевыми становятся происхождение данных, условия лицензий, документирование решений и доказуемый человеческий контроль.' },
-      ],
+        {
+          tone: 'pulse-payments',
+          label: 'Платежи',
+          badge: 'Инфраструктура',
+          title: 'Национальные мгновенные платежи становятся стратегическим активом',
+          copy: 'История Pix показывает: дешевые государственные рельсы меняют конкуренцию с карточными системами и выходят на уровень международной торговой политики.'
+        },
+        {
+          tone: 'pulse-ai',
+          label: 'Платежи',
+          badge: 'Интерфейс',
+          title: 'Кошелек превращается в основную точку продажи финансовых услуг',
+          copy: 'Samsung, Mastercard и другие платформы связывают карту, бесконтактную оплату и управление продуктом в одном мобильном интерфейсе.'
+        }
+      ]
     },
     ai: {
-      title: 'Пульс рынка ИИ',
-      subtitle: 'Два редакционных вывода по материалам текущего выпуска. Не являются инвестиционной рекомендацией.',
+      title: 'Пульс ИИ в финансах',
+      subtitle: 'Два вывода по материалам текущего пятидневного выпуска. Не являются инвестиционной рекомендацией.',
       cards: [
-        { tone: 'pulse-ai', label: 'ИИ', badge: 'Внедрение', title: 'Ценность перемещается из модели в рабочий процесс', copy: 'Побеждают решения, которые встроены в данные, права доступа и измеримый бизнес-процесс, а не просто демонстрируют качество ответа в отдельном чате.' },
-        { tone: 'pulse-payments', label: 'ИИ', badge: 'Экономика', title: 'Рынок требует доказуемой эффективности и контроля рисков', copy: 'Инвестиции и корпоративный спрос концентрируются там, где можно измерить результат, защитить данные и объяснить ответственность за решение модели.' },
-      ],
-    },
+        {
+          tone: 'pulse-ai',
+          label: 'ИИ',
+          badge: 'Масштабирование',
+          title: 'Банки переходят от пилотов к перестройке операционной модели',
+          copy: 'Назначение профильных руководителей, сотни сценариев и измеримый финансовый эффект показывают, что ИИ становится постоянной частью банковской инфраструктуры.'
+        },
+        {
+          tone: 'pulse-payments',
+          label: 'ИИ',
+          badge: 'Агентные платежи',
+          title: 'Главный дефицит — не модель, а доверительная рамка для действий агента',
+          copy: 'Для платежей от имени клиента рынку нужны идентификация агента, границы полномочий, правила ответственности и новые антифрод-модели.'
+        }
+      ]
+    }
   };
 
-  const allowed = new Set(Object.keys(DATA));
   const $ = (selector) => document.querySelector(selector);
   const normalize = (value) => String(value || '').toLocaleLowerCase('ru-RU');
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (symbol) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   }[symbol]));
+
+  function isValidData(data) {
+    return Boolean(data)
+      && Object.keys(data).length === REQUIRED_SECTIONS.length
+      && REQUIRED_SECTIONS.every((name) => {
+        const current = data[name];
+        return current
+          && Array.isArray(current.filters)
+          && Array.isArray(current.items)
+          && current.items.length > 0
+          && current.items.length <= 15
+          && current.items.every((item) => {
+            try {
+              const url = new URL(String(item.url || ''));
+              return url.protocol === 'https:'
+                && typeof item.title === 'string'
+                && typeof item.summary === 'string'
+                && typeof item.impact === 'string'
+                && typeof item.source === 'string'
+                && Array.isArray(item.tags);
+            } catch {
+              return false;
+            }
+          });
+      });
+  }
+
   const safeUrl = (value) => {
     try {
       const url = new URL(String(value || ''));
@@ -100,19 +115,11 @@
   };
 
   function storageGet(key, fallback = '') {
-    try {
-      return localStorage.getItem(key) ?? fallback;
-    } catch {
-      return fallback;
-    }
+    try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; }
   }
 
   function storageSet(key, value) {
-    try {
-      localStorage.setItem(key, value);
-    } catch {
-      // Интерфейс остаётся работоспособным, даже если хранилище браузера заблокировано.
-    }
+    try { localStorage.setItem(key, value); } catch { /* интерфейс работает без хранилища */ }
   }
 
   function loadSaved() {
@@ -124,6 +131,7 @@
     }
   }
 
+  const allowed = new Set(REQUIRED_SECTIONS);
   const saved = loadSaved();
   let section = allowed.has(location.hash.slice(1)) ? location.hash.slice(1) : 'payments';
   let filter = 'Все';
@@ -139,8 +147,9 @@
   function setTheme(theme) {
     document.documentElement.dataset.theme = theme;
     storageSet('paydigest-theme', theme);
-    $('meta[name="theme-color"]').content = theme === 'dark' ? '#151613' : '#f4f2ed';
-    $('#themeToggle').setAttribute('aria-pressed', String(theme === 'dark'));
+    const meta = $('meta[name="theme-color"]');
+    if (meta) meta.content = theme === 'dark' ? '#151613' : '#f4f2ed';
+    $('#themeToggle')?.setAttribute('aria-pressed', String(theme === 'dark'));
   }
 
   function renderFilters() {
@@ -166,13 +175,12 @@
     const id = itemId(item);
     const isSaved = saved.has(id);
     const tags = Array.isArray(item.tags) ? item.tags : [];
-    const kind = section === 'law' ? ' law-card' : '';
     const featured = item.featured && index === 0 ? ' featured' : '';
     const title = escapeHtml(item.title);
     const source = escapeHtml(item.source);
     const url = safeUrl(item.url);
 
-    return `<article class="story-card${kind}${featured}">
+    return `<article class="story-card${featured}">
       <div class="card-top">
         <div class="card-tags">${tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>
         <button class="bookmark ${isSaved ? 'is-saved' : ''}" type="button" data-save="${id}" aria-label="${isSaved ? 'Удалить из сохранённых' : 'Сохранить материал'}">${isSaved ? '★' : '☆'}</button>
@@ -258,8 +266,9 @@
       if (isValidData(fresh)) {
         DATA = fresh;
         render();
-        setRefreshStatus('Свежий выпуск загружен', 'ready');
+        setRefreshStatus('Актуальный выпуск загружен', 'ready');
       } else {
+        window.PAYDIGEST_DATA = DATA;
         setRefreshStatus('Показана последняя сохранённая версия', 'offline');
       }
       refreshing = false;
@@ -284,7 +293,7 @@
     render();
   }
 
-  document.querySelector('.primary-nav').addEventListener('click', (event) => {
+  document.querySelector('.primary-nav')?.addEventListener('click', (event) => {
     const button = event.target.closest('[data-section]');
     if (button) switchSection(button.dataset.section);
   });
@@ -312,26 +321,20 @@
     render();
   });
 
-  $('#clearFilters').addEventListener('click', () => {
+  $('#clearFilters')?.addEventListener('click', () => {
     filter = 'Все';
     query = '';
     search.value = '';
     render();
   });
 
-  $('#themeToggle').addEventListener('click', () => {
+  $('#themeToggle')?.addEventListener('click', () => {
     setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
   });
 
   window.addEventListener('hashchange', () => {
     const next = location.hash.slice(1);
-    if (allowed.has(next) && next !== section) {
-      section = next;
-      filter = 'Все';
-      query = '';
-      search.value = '';
-      render();
-    }
+    if (allowed.has(next) && next !== section) switchSection(next, false);
   });
 
   window.addEventListener('pageshow', (event) => {

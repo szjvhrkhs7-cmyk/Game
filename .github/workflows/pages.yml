@@ -1,9 +1,10 @@
-name: Deploy Banana Cat Bros
+name: Deploy Game and PayDigest
 
 on:
   push:
     branches:
       - claude/mario-maker-style-game-7p670u
+      - gh-pages
   workflow_dispatch:
 
 permissions:
@@ -12,21 +13,45 @@ permissions:
   id-token: write
 
 concurrency:
-  group: banana-cat-pages
+  group: game-pages
   cancel-in-progress: true
 
 jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout application branch
         uses: actions/checkout@v4
+        with:
+          ref: claude/mario-maker-style-game-7p670u
+          fetch-depth: 0
+
+      - name: Add PayDigest from publishing branch
+        run: |
+          git fetch origin gh-pages:refs/remotes/origin/gh-pages
+          git checkout origin/gh-pages -- payments-news
+          test -f payments-news/index.html
+          test -f payments-news/styles.css
+          test -f payments-news/app.js
+          test -f payments-news/data.js
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
+
       - name: Validate game
         run: npm test && npm run check
+
+      - name: Validate PayDigest JavaScript
+        run: |
+          node --check payments-news/app.js
+          node --check payments-news/data.js
+
+      - name: Upload combined site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
 
   deploy:
     needs: verify
@@ -35,14 +60,6 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-      - name: Upload game
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4

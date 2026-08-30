@@ -4,7 +4,7 @@ const SOURCE = "/tmp/ne_admin1_10m.geojson";
 const OUTPUT = new URL("../src/regions.js", import.meta.url);
 const WIDTH = 1400;
 const HEIGHT = 850;
-const BOUNDS = { west: -14, east: 56, south: 26, north: 72 };
+const BOUNDS = { west: -14, east: 56, south: 17, north: 72 };
 
 const targets = {
   GBR: 10, IRL: 4, FRA: 12, DEU: 10, ESP: 9, PRT: 4, ITA: 11, POL: 7,

@@ -1,17 +1,15 @@
 {
-  "name": "Банановые коты: Мышиный переполох",
-  "short_name": "Банановые коты",
-  "description": "Вертикальный браузерный платформер о двух котиках, бананах и мышином переполохе.",
+  "name": "Crown & Conquest: Европа 1095",
+  "short_name": "Crown & Conquest",
+  "description": "Пошаговая стратегия о средневековой Европе",
   "lang": "ru",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait-primary",
-  "background_color": "#080b14",
-  "theme_color": "#101a25",
+  "orientation": "any",
+  "background_color": "#12110f",
+  "theme_color": "#17130f",
   "icons": [
-    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ]
 }

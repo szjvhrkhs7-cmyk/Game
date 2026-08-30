@@ -377,15 +377,16 @@ button:focus-visible, [role="button"]:focus-visible {
 
 .map-frame { position: relative; flex: 1; min-height: 0; overflow: hidden; background: #18343a; }
 #campaignMap { width: 100%; height: 100%; min-height: 480px; display: block; touch-action: none; user-select: none; }
-.province { stroke: rgba(245, 224, 180, .46); stroke-width: 1.5; vector-effect: non-scaling-stroke; filter: url(#provinceShadow); transition: filter .15s, opacity .15s, stroke-width .15s; }
+.province { stroke: rgba(73, 48, 27, .72); stroke-width: 1.05; vector-effect: non-scaling-stroke; filter: url(#provinceShadow); opacity: .92; transition: filter .15s, opacity .15s, stroke-width .15s; }
 .province:hover { opacity: .88; stroke: #f2d78f; stroke-width: 2.5; }
 .province.selected { stroke: #ffe29a; stroke-width: 3; filter: url(#selectedGlow); }
 .province.reachable { stroke: #a9c893; stroke-width: 3; stroke-dasharray: 6 4; animation: borderPulse 1.6s infinite; }
 .province.hostile-target { stroke: #e37d72; }
 @keyframes borderPulse { 50% { stroke-opacity: .45; } }
-.province-label { fill: rgba(255,255,255,.82); font: 700 9px var(--sans); letter-spacing: .03em; text-anchor: middle; paint-order: stroke; stroke: rgba(20,20,18,.76); stroke-width: 2.4px; stroke-linejoin: round; }
-.capital-label { fill: #f3d783; font-size: 8px; text-anchor: middle; }
-.sea-label { fill: rgba(196,216,218,.24); font: italic 13px var(--serif); letter-spacing: .14em; text-anchor: middle; }
+.province-label { fill: rgba(255,248,222,.9); font: 700 6.5px var(--serif); letter-spacing: .035em; text-anchor: middle; paint-order: stroke; stroke: rgba(32,22,15,.8); stroke-width: 2px; stroke-linejoin: round; }
+.province-label.major { font-size: 8px; fill: #fff1bd; }
+.capital-label { fill: #ffe49a; font-size: 9px; text-anchor: middle; paint-order: stroke; stroke: #3c2718; stroke-width: 1.5px; }
+.sea-label { fill: rgba(225,231,206,.38); font: italic 15px var(--serif); letter-spacing: .14em; text-anchor: middle; paint-order: stroke; stroke: rgba(14,69,73,.35); stroke-width: 1px; }
 .army-marker { fill: rgba(18,17,15,.89); stroke: rgba(246,221,161,.6); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
 .army-marker-text { fill: #f6e4b8; font: 800 10px var(--sans); text-anchor: middle; dominant-baseline: middle; }
 .army-marker-icon { fill: #d8b967; font: 13px var(--serif); text-anchor: middle; }

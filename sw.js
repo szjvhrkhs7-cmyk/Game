@@ -1,4 +1,4 @@
-const CACHE_NAME = "crown-conquest-v2";
+const CACHE_NAME = "crown-conquest-v3";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -7,6 +7,7 @@ const APP_SHELL = [
   "./assets/icon.svg",
   "./src/app.js",
   "./src/data.js",
+  "./src/regions.js",
   "./src/engine.js",
 ];
 

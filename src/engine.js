@@ -9,7 +9,7 @@ import {
   UNIT_TYPES,
 } from "./data.js";
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 export const SEASONS = Object.freeze(["Весна", "Лето", "Осень", "Зима"]);
 export const TACTICS = Object.freeze({
   frontal: { id: "frontal", name: "Стальной натиск", description: "Надёжно против обстрела", icon: "⚔" },
@@ -75,8 +75,8 @@ export function createCampaign(playerFaction) {
     }])),
     diplomacy: createDiplomacy(),
     objectives: {
-      provincesToWin: 18,
-      capitalsToWin: 5,
+      provincesToWin: 55,
+      capitalsToWin: 6,
     },
     statistics: {
       battles: 0,
@@ -600,7 +600,7 @@ export function validateCampaignData() {
   const ids = new Set(PROVINCES.map((item) => item.id));
   for (const item of PROVINCES) {
     if (!FACTIONS[item.owner]) errors.push(`${item.id}: неизвестный владелец`);
-    if (!item.points || item.center.length !== 2) errors.push(`${item.id}: некорректная геометрия`);
+    if (!(item.path || item.points) || item.center.length !== 2) errors.push(`${item.id}: некорректная геометрия`);
     for (const neighbor of item.neighbors) {
       if (!ids.has(neighbor)) errors.push(`${item.id}: неизвестный сосед ${neighbor}`);
       else if (!PROVINCES.find((candidate) => candidate.id === neighbor).neighbors.includes(item.id)) {

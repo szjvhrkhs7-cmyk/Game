@@ -30,8 +30,9 @@ import {
   resolveBattle,
   sendGift,
 } from "./engine.js";
+import { MAP_VIEWBOX } from "./regions.js";
 
-const SAVE_KEY = "crown-and-conquest-campaign-v2";
+const SAVE_KEY = "crown-and-conquest-campaign-v3";
 const SVG_NS = "http://www.w3.org/2000/svg";
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -46,7 +47,8 @@ let marchOrigin = null;
 let pendingBattle = null;
 let soundEnabled = true;
 let toastTimer = null;
-let mapView = { x: 0, y: 0, width: 1000, height: 650 };
+const MAP_RATIO = MAP_VIEWBOX.height / MAP_VIEWBOX.width;
+let mapView = { x: 0, y: 0, width: MAP_VIEWBOX.width, height: MAP_VIEWBOX.height };
 let dragging = null;
 let draggedDistance = 0;
 
@@ -241,11 +243,11 @@ function renderMap() {
   }
 
   const reachable = marchOrigin ? new Set(campaign.provinces[marchOrigin].neighbors) : new Set();
-  for (const template of PROVINCES) {
+  for (const [regionIndex, template] of PROVINCES.entries()) {
     const item = campaign.provinces[template.id];
     const faction = FACTIONS[item.owner];
-    const polygon = svgElement("polygon", {
-      points: item.points,
+    const polygon = svgElement(item.path ? "path" : "polygon", {
+      ...(item.path ? { d: item.path } : { points: item.points }),
       class: [
         "province",
         campaign.selectedProvince === item.id ? "selected" : "",
@@ -280,12 +282,14 @@ function renderMap() {
       capital.textContent = "◆";
       labelLayer.append(capital);
     }
-    const label = svgElement("text", { x: centerX, y: centerY + 2, class: "province-label" });
-    label.textContent = item.name.toUpperCase();
-    labelLayer.append(label);
+    if (item.capital || regionIndex % 4 === 0 || campaign.selectedProvince === item.id) {
+      const label = svgElement("text", { x: centerX, y: centerY + 2, class: item.capital ? "province-label major" : "province-label" });
+      label.textContent = item.name.toUpperCase();
+      labelLayer.append(label);
+    }
 
     const soldierCount = armySoldiers(item.army);
-    if (soldierCount > 0) {
+    if (soldierCount > 0 && (item.capital || item.id === campaign.selectedProvince || soldierCount >= 350)) {
       const markerX = centerX + 16;
       const markerY = centerY + 17;
       armyLayer.append(svgElement("circle", { cx: markerX, cy: markerY, r: 12, class: "army-marker" }));
@@ -629,10 +633,10 @@ function selectTab(tabId) {
 }
 
 function setMapView(next) {
-  const width = Math.max(380, Math.min(1000, next.width));
-  const height = width * .65;
-  const x = Math.max(0, Math.min(1000 - width, next.x));
-  const y = Math.max(0, Math.min(650 - height, next.y));
+  const width = Math.max(420, Math.min(MAP_VIEWBOX.width, next.width));
+  const height = width * MAP_RATIO;
+  const x = Math.max(0, Math.min(MAP_VIEWBOX.width - width, next.x));
+  const y = Math.max(0, Math.min(MAP_VIEWBOX.height - height, next.y));
   mapView = { x, y, width, height };
   applyMapView();
 }
@@ -643,7 +647,7 @@ function applyMapView() {
 
 function zoomMap(factor) {
   const newWidth = mapView.width * factor;
-  const newHeight = newWidth * .65;
+  const newHeight = newWidth * MAP_RATIO;
   setMapView({
     width: newWidth,
     height: newHeight,
@@ -653,7 +657,7 @@ function zoomMap(factor) {
 }
 
 function resetMapView() {
-  mapView = { x: 0, y: 0, width: 1000, height: 650 };
+  mapView = { x: 0, y: 0, width: MAP_VIEWBOX.width, height: MAP_VIEWBOX.height };
   applyMapView();
 }
 

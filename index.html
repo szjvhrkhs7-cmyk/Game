@@ -118,7 +118,7 @@
           </div>
 
           <div id="mapFrame" class="map-frame">
-            <svg id="campaignMap" viewBox="0 0 1000 650" role="img" aria-labelledby="mapTitle mapDescription">
+            <svg id="campaignMap" viewBox="0 0 1400 850" role="img" aria-labelledby="mapTitle mapDescription">
               <title id="mapTitle">Политическая карта Европы</title>
               <desc id="mapDescription">Интерактивная карта провинций. Выберите область для управления землями и армиями.</desc>
               <defs>
@@ -128,15 +128,21 @@
                 <filter id="selectedGlow" x="-30%" y="-30%" width="160%" height="160%">
                   <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f3d993" flood-opacity=".95"/>
                 </filter>
-                <pattern id="oceanPattern" width="42" height="42" patternUnits="userSpaceOnUse">
-                  <path d="M0 21 Q10 14 21 21 T42 21" fill="none" stroke="#b4cad0" stroke-opacity=".09" stroke-width="1"/>
+                <pattern id="oceanPattern" width="48" height="48" patternUnits="userSpaceOnUse">
+                  <path d="M0 24 Q12 16 24 24 T48 24" fill="none" stroke="#d5d2ad" stroke-opacity=".12" stroke-width="1"/>
                 </pattern>
                 <radialGradient id="oceanGlow" cx="48%" cy="45%" r="70%">
-                  <stop offset="0" stop-color="#385960"/><stop offset="1" stop-color="#152f36"/>
+                  <stop offset="0" stop-color="#4e8d8b"/><stop offset=".72" stop-color="#286a70"/><stop offset="1" stop-color="#164c56"/>
                 </radialGradient>
+                <filter id="paperGrain" x="0" y="0" width="100%" height="100%">
+                  <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="3" seed="7"/>
+                  <feColorMatrix type="saturate" values="0"/>
+                  <feComponentTransfer><feFuncA type="table" tableValues="0 .13"/></feComponentTransfer>
+                </filter>
               </defs>
-              <rect width="1000" height="650" fill="url(#oceanGlow)"/>
-              <rect width="1000" height="650" fill="url(#oceanPattern)"/>
+              <rect width="1400" height="850" fill="url(#oceanGlow)"/>
+              <rect width="1400" height="850" fill="url(#oceanPattern)"/>
+              <rect width="1400" height="850" fill="#d8c18e" filter="url(#paperGrain)" opacity=".32"/>
               <g id="mapViewport">
                 <g id="seaLayer" aria-hidden="true"></g>
                 <g id="provinceLayer"></g>

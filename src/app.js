@@ -1,4 +1,4 @@
-import { ProsyolokGame } from "./game.js";
+import { ProsyolokGame } from "./game.js?v=3";
 import { MISSIONS, missionDistance, nearestMission, surfaceAt } from "./world.js";
 import { SURFACES } from "./physics.js";
 import { clearSave, loadGame, saveGame } from "./storage.js";

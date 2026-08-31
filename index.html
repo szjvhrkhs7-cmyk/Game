@@ -1,296 +1,92 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#17130f">
-  <meta name="description" content="Crown & Conquest — пошаговая браузерная стратегия о средневековой Европе.">
-  <title>Crown & Conquest: Европа 1095</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#1b2622">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Просёлок</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="paper-noise" aria-hidden="true"></div>
+  <div id="loadingScreen" class="loading-screen" aria-live="polite"><span class="road-loader"></span><strong>Просёлок</strong><small>готовим дорогу</small></div>
 
-  <main id="app" class="app-shell">
-    <section id="welcomeScreen" class="welcome-screen" aria-labelledby="gameTitle">
-      <div class="welcome-art" aria-hidden="true">
-        <span class="sun-disc"></span>
-        <span class="castle-silhouette">♜</span>
-        <span class="banner-line"></span>
+  <main id="startScreen" class="start-screen">
+    <div class="start-landscape" aria-hidden="true"><span class="sun"></span><span class="forest"></span><span class="road"></span><span class="car-silhouette"><i></i><i></i></span></div>
+    <section class="start-card">
+      <p class="eyebrow">Мобильный симулятор вождения</p>
+      <h1>Просёлок</h1>
+      <p class="start-lead">Старая машина, живая деревня и дороги, которые меняются после дождя.</p>
+      <div class="start-actions">
+        <button id="newGameButton" class="primary-button" type="button">Новая поездка</button>
+        <button id="continueButton" class="secondary-button" type="button">Продолжить</button>
       </div>
-      <div class="welcome-copy">
-        <p class="overline">Большая пошаговая стратегия</p>
-        <h1 id="gameTitle"><span>Crown</span> <i>&</i> <span>Conquest</span></h1>
-        <p class="subtitle">Европа, 1095 год</p>
-        <p class="intro">Примите корону, укрепите владения и перепишите карту континента. Каждый поход начинается с одного решения.</p>
-        <div class="welcome-actions">
-          <button id="newCampaignButton" class="primary-button" type="button">Новая кампания <span>→</span></button>
-          <button id="continueButton" class="secondary-button" type="button" hidden>Продолжить кампанию</button>
-        </div>
-        <div class="feature-line" aria-label="Особенности игры">
-          <span>229 регионов</span><span>8 держав</span><span>Дипломатия</span><span>Сражения</span>
-        </div>
-      </div>
-      <p class="welcome-footnote">Оригинальная браузерная игра. Европа, Северная Африка и Восточное Средиземноморье на цельной карте кампании.</p>
-    </section>
-
-    <section id="factionScreen" class="faction-screen" hidden aria-labelledby="factionTitle">
-      <header class="selection-header">
-        <button id="backToWelcomeButton" class="ghost-button back-button" type="button">← Назад</button>
-        <div>
-          <p class="overline">Начало великой хроники</p>
-          <h2 id="factionTitle">Выберите державу</h2>
-          <p>У каждой короны свой характер, положение и путь к победе.</p>
-        </div>
-      </header>
-      <div id="factionGrid" class="faction-grid"></div>
-      <div id="selectedFactionSummary" class="selected-faction-summary" hidden>
-        <div>
-          <span id="summaryEmblem" class="summary-emblem"></span>
-          <div><small>Ваш выбор</small><strong id="summaryName"></strong><span id="summaryRuler"></span></div>
-        </div>
-        <button id="beginCampaignButton" class="primary-button" type="button">Принять корону <span>→</span></button>
-      </div>
-    </section>
-
-    <section id="campaignScreen" class="campaign-screen" hidden aria-label="Карта кампании">
-      <header class="campaign-header">
-        <button id="realmButton" class="realm-identity" type="button" title="О державе">
-          <span id="realmEmblem" class="realm-emblem"></span>
-          <span><small>Ваша держава</small><strong id="realmName"></strong></span>
-        </button>
-        <div class="resource-bar" aria-label="Ресурсы державы">
-          <div title="Золото"><span class="resource-icon coin">●</span><span><small>Казна</small><strong id="goldValue">0</strong></span><em id="goldDelta">+0</em></div>
-          <div title="Продовольствие"><span class="resource-icon food">♨</span><span><small>Еда</small><strong id="foodValue">0</strong></span><em id="foodDelta">+0</em></div>
-          <div title="Авторитет"><span class="resource-icon authority">✦</span><span><small>Авторитет</small><strong id="authorityValue">0</strong></span></div>
-        </div>
-        <div class="header-actions">
-          <button id="helpButton" class="icon-button" type="button" aria-label="Правила игры" title="Правила">?</button>
-          <button id="soundButton" class="icon-button" type="button" aria-label="Выключить звук" title="Звук">♪</button>
-          <button id="fullscreenButton" class="icon-button" type="button" aria-label="На весь экран" title="На весь экран">⛶</button>
-        </div>
-      </header>
-
-      <div class="campaign-layout">
-        <aside class="realm-panel panel">
-          <section class="turn-card">
-            <div><small id="seasonValue">Весна</small><strong><span id="yearValue">1095</span> год</strong><span>Ход <b id="turnValue">1</b></span></div>
-            <span class="wax-seal" aria-hidden="true">✦</span>
-          </section>
-
-          <section class="objective-card">
-            <div class="section-heading"><span>Цель кампании</span><b id="progressPercent">0%</b></div>
-            <div class="progress-track"><span id="progressBar"></span></div>
-            <p>Подчините <strong id="provinceGoal">55 провинций</strong> или захватите <strong id="capitalGoal">6 столиц</strong>.</p>
-            <div class="objective-counts">
-              <span><b id="ownedProvinceCount">0</b> провинций</span>
-              <span><b id="ownedCapitalCount">0</b> столиц</span>
-            </div>
-          </section>
-
-          <section class="realm-overview">
-            <div class="section-heading"><span>Совет короны</span></div>
-            <button id="diplomacyButton" class="menu-action" type="button"><span class="menu-icon">⚖</span><span><strong>Дипломатия</strong><small id="warCount">0 активных войн</small></span><b>›</b></button>
-            <button id="chronicleButton" class="menu-action" type="button"><span class="menu-icon">☷</span><span><strong>Хроника</strong><small>Последние события</small></span><b>›</b></button>
-          </section>
-
-          <section id="chroniclePreview" class="chronicle-preview" aria-live="polite"></section>
-
-          <div class="turn-actions">
-            <button id="endTurnButton" class="end-turn-button" type="button"><span>Завершить ход</span><b>→</b></button>
-            <div>
-              <button id="saveButton" class="text-button" type="button">Сохранить</button>
-              <button id="exitButton" class="text-button danger-text" type="button">В меню</button>
-            </div>
-          </div>
-        </aside>
-
-        <section class="map-column">
-          <div class="map-toolbar">
-            <div class="map-title"><span class="live-dot"></span><span><strong>Стратегическая карта</strong><small id="mapModeLabel">Выберите провинцию</small></span></div>
-            <div class="map-controls" aria-label="Масштаб карты">
-              <button id="zoomOutButton" type="button" aria-label="Уменьшить">−</button>
-              <button id="resetViewButton" type="button" aria-label="Показать всю карту">⌂</button>
-              <button id="zoomInButton" type="button" aria-label="Увеличить">+</button>
-            </div>
-          </div>
-
-          <div id="mapFrame" class="map-frame">
-            <svg id="campaignMap" viewBox="0 0 1400 850" role="img" aria-labelledby="mapTitle mapDescription">
-              <title id="mapTitle">Политическая карта Европы</title>
-              <desc id="mapDescription">Интерактивная карта провинций. Выберите область для управления землями и армиями.</desc>
-              <defs>
-                <filter id="provinceShadow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0b1010" flood-opacity=".42"/>
-                </filter>
-                <filter id="selectedGlow" x="-30%" y="-30%" width="160%" height="160%">
-                  <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f3d993" flood-opacity=".95"/>
-                </filter>
-                <pattern id="oceanPattern" width="48" height="48" patternUnits="userSpaceOnUse">
-                  <path d="M0 24 Q12 16 24 24 T48 24" fill="none" stroke="#d5d2ad" stroke-opacity=".12" stroke-width="1"/>
-                </pattern>
-                <radialGradient id="oceanGlow" cx="48%" cy="45%" r="70%">
-                  <stop offset="0" stop-color="#4e8d8b"/><stop offset=".72" stop-color="#286a70"/><stop offset="1" stop-color="#164c56"/>
-                </radialGradient>
-                <filter id="paperGrain" x="0" y="0" width="100%" height="100%">
-                  <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="3" seed="7"/>
-                  <feColorMatrix type="saturate" values="0"/>
-                  <feComponentTransfer><feFuncA type="table" tableValues="0 .13"/></feComponentTransfer>
-                </filter>
-              </defs>
-              <rect width="1400" height="850" fill="url(#oceanGlow)"/>
-              <rect width="1400" height="850" fill="url(#oceanPattern)"/>
-              <rect width="1400" height="850" fill="#d8c18e" filter="url(#paperGrain)" opacity=".32"/>
-              <g id="mapViewport">
-                <g id="seaLayer" aria-hidden="true"></g>
-                <g id="provinceLayer"></g>
-                <g id="infrastructureLayer" pointer-events="none"></g>
-                <g id="routeLayer" pointer-events="none"></g>
-                <g id="labelLayer" pointer-events="none"></g>
-                <g id="armyLayer"></g>
-              </g>
-            </svg>
-            <div class="map-legend" aria-label="Обозначения карты"><span><i class="capital-symbol">◆</i> Столица</span><span><i class="army-symbol">♟</i> Армия</span><span><i class="selected-symbol"></i> Выбрано</span></div>
-            <div id="mapHint" class="map-hint">Нажмите на провинцию, чтобы открыть управление</div>
-          </div>
-        </section>
-
-        <aside id="provincePanel" class="province-panel panel">
-          <div id="emptyProvince" class="empty-province">
-            <span class="compass-art">✣</span>
-            <h2>Выберите землю</h2>
-            <p>Нажмите на провинцию, чтобы увидеть её гарнизон, доходы и доступные действия.</p>
-          </div>
-
-          <div id="provinceDetails" hidden>
-            <header class="province-header">
-              <div><span id="provinceOwnerBadge" class="owner-badge"></span><h2 id="provinceName"></h2><p><span id="provinceTerrain"></span><span id="provinceCoastal"></span></p></div>
-              <span id="provinceEmblem" class="province-emblem"></span>
-            </header>
-
-            <div class="province-stats">
-              <div><small>Доход</small><strong id="provinceIncome">+0</strong><span>золота</span></div>
-              <div><small>Пища</small><strong id="provinceFood">+0</strong><span>за ход</span></div>
-              <div><small>Порядок</small><strong id="provinceOrder">100%</strong><span id="orderStatus">спокойно</span></div>
-            </div>
-
-            <section class="army-card">
-              <div class="section-heading"><span>Гарнизон</span><b id="armySoldiers">0 воинов</b></div>
-              <div id="armyComposition" class="army-composition"></div>
-              <div class="strength-line"><span>Боевая сила</span><strong id="armyStrength">0</strong></div>
-            </section>
-
-            <div id="provinceTabs" class="province-tabs" role="tablist">
-              <button class="active" type="button" data-tab="actions" role="tab" aria-selected="true">Действия</button>
-              <button type="button" data-tab="recruit" role="tab" aria-selected="false">Набор</button>
-              <button type="button" data-tab="build" role="tab" aria-selected="false">Строительство</button>
-            </div>
-
-            <section id="actionsTab" class="tab-content active" data-tab-content="actions">
-              <div id="provinceActionContent"></div>
-            </section>
-            <section id="recruitTab" class="tab-content" data-tab-content="recruit">
-              <div id="recruitOptions" class="option-list"></div>
-            </section>
-            <section id="buildTab" class="tab-content" data-tab-content="build">
-              <div id="buildOptions" class="option-list"></div>
-            </section>
-          </div>
-        </aside>
-      </div>
+      <div class="feature-row"><span>3D-мир</span><span>Физика покрытий</span><span>Без рекламы</span></div>
+      <p class="landscape-note">Для вождения поверните телефон горизонтально</p>
     </section>
   </main>
 
-  <dialog id="battleDialog" class="game-dialog battle-dialog">
-    <form method="dialog">
-      <button class="dialog-close" value="cancel" aria-label="Отменить поход">×</button>
-      <p class="overline">Совет перед битвой</p>
-      <h2>Выберите тактику</h2>
-      <p id="battleSubtitle" class="dialog-lead"></p>
-      <div class="battle-balance">
-        <div><span id="battleAttackerEmblem"></span><small>Ваша армия</small><strong id="battleAttackerCount"></strong></div>
-        <span class="versus">VS</span>
-        <div><span id="battleDefenderEmblem"></span><small>Защитники</small><strong id="battleDefenderCount"></strong></div>
+  <main id="gameScreen" class="game-screen" hidden>
+    <canvas id="gameCanvas" aria-label="Трёхмерная дорога и автомобиль"></canvas>
+    <div class="vignette" aria-hidden="true"></div>
+    <div id="cockpit" class="cockpit" hidden aria-hidden="true"><span class="dash-left"></span><span class="dash-center"></span><span class="dash-right"></span></div>
+
+    <header class="top-hud">
+      <button id="pauseButton" class="icon-button" type="button" aria-label="Пауза"><span></span><span></span></button>
+      <div class="mission-hud"><small id="missionTitle">Свободная поездка</small><strong id="missionDistance">Исследуйте деревню</strong><button id="acceptMissionButton" type="button" hidden>Принять</button></div>
+      <div class="top-actions">
+        <button id="cameraButton" class="icon-button camera-icon" type="button" aria-label="Сменить камеру"></button>
+        <button id="lightButton" class="icon-button light-icon" type="button" aria-label="Фары"></button>
+        <button id="hornButton" class="icon-button horn-icon" type="button" aria-label="Сигнал"></button>
       </div>
-      <div class="battle-phases" aria-label="Фазы сражения"><span>Расстановка</span><span>Контакт</span><span>Главный бой</span><span>Дух</span><span>Преследование</span></div>
-      <button id="autoResolveButton" class="auto-resolve-button" type="button"><span>⚙</span><strong>Быстрый расчёт</strong><small>Командиры самостоятельно выберут построение</small></button>
-      <p class="battle-mode-label">Тактическое командование</p>
-      <div id="formationList" class="formation-list" aria-label="Построение армии"></div>
-      <div id="tacticsList" class="tactics-list"></div>
-      <p class="counter-hint">Каждый приказ имеет сильную и слабую сторону. Состав армии, дух, снабжение, рельеф и укрепления влияют на результат.</p>
-    </form>
-  </dialog>
+    </header>
 
-  <dialog id="resultDialog" class="game-dialog result-dialog">
-    <form method="dialog">
-      <div id="resultSeal" class="result-seal">⚔</div>
-      <p id="resultOverline" class="overline"></p>
-      <h2 id="resultTitle"></h2>
-      <p id="resultText" class="dialog-lead"></p>
-      <div id="resultStats" class="result-stats"></div>
-      <button class="primary-button dialog-confirm" value="confirm">Вернуться к карте <span>→</span></button>
-    </form>
-  </dialog>
+    <aside class="telemetry">
+      <div class="speedometer"><strong id="speed">0</strong><span>км/ч</span><b id="gear">D</b></div>
+      <div id="rpm" class="rpm"><i></i></div>
+      <div class="status-line"><span id="surfaceName">Асфальт</span><span id="moneyValue">1 200 ₽</span><span id="fpsValue">0 FPS</span></div>
+      <div class="fuel"><span>ТОПЛИВО</span><i><b id="fuelBar"></b></i><strong id="fuelValue">42.0 л</strong></div>
+      <div class="damage"><span>СОСТОЯНИЕ</span><strong id="damageValue">0%</strong></div>
+    </aside>
 
-  <dialog id="diplomacyDialog" class="game-dialog wide-dialog">
-    <form method="dialog">
-      <button class="dialog-close" value="cancel" aria-label="Закрыть">×</button>
-      <p class="overline">Двор послов</p>
-      <h2>Дипломатия</h2>
-      <p class="dialog-lead">Договоры приносят доход. Войны открывают путь армиям.</p>
-      <div id="diplomacyList" class="diplomacy-list"></div>
-    </form>
-  </dialog>
+    <section id="wheelControl" class="steering-zone" aria-label="Рулевое управление">
+      <div id="steeringWheel" class="steering-wheel"><span></span><i></i><b></b></div>
+      <button id="handbrakeButton" class="small-control" type="button">РУЧНИК</button>
+    </section>
+    <section id="buttonControl" class="direction-zone" hidden>
+      <button id="leftButton" type="button" aria-label="Поворот налево">‹</button><button id="rightButton" type="button" aria-label="Поворот направо">›</button>
+    </section>
 
-  <dialog id="chronicleDialog" class="game-dialog wide-dialog">
-    <form method="dialog">
-      <button class="dialog-close" value="cancel" aria-label="Закрыть">×</button>
-      <p class="overline">Летопись правления</p>
-      <h2>Хроника Европы</h2>
-      <div id="chronicleList" class="chronicle-list"></div>
-    </form>
-  </dialog>
+    <section class="pedal-zone" aria-label="Педали">
+      <button id="engineButton" class="engine-button" type="button" aria-label="Запустить двигатель">START</button>
+      <button id="gearButton" class="gear-button" type="button" aria-label="Направление движения">D</button>
+      <button id="brakeButton" class="pedal brake-pedal" type="button"><span></span><b>ТОРМОЗ</b></button>
+      <button id="gasButton" class="pedal gas-pedal" type="button"><span></span><b>ГАЗ</b></button>
+    </section>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </main>
 
-  <dialog id="eventDialog" class="game-dialog event-dialog">
-    <form method="dialog">
-      <span class="event-illustration" aria-hidden="true">☼</span>
-      <p class="overline">Событие при дворе</p>
-      <h2 id="eventTitle"></h2>
-      <p id="eventText" class="dialog-lead"></p>
-      <div id="eventEffect" class="event-effect"></div>
-      <button class="primary-button dialog-confirm" value="confirm">Продолжить <span>→</span></button>
-    </form>
-  </dialog>
+  <div class="rotate-overlay"><div class="phone-rotate"><span></span></div><strong>Поверните телефон</strong><p>Дорога лучше видна в альбомной ориентации</p></div>
 
-  <dialog id="helpDialog" class="game-dialog wide-dialog help-dialog">
-    <form method="dialog">
-      <button class="dialog-close" value="cancel" aria-label="Закрыть">×</button>
-      <p class="overline">Краткий советник</p>
-      <h2>Как править державой</h2>
-      <div class="help-grid">
-        <article><span>1</span><h3>Развивайте земли</h3><p>Поля дают еду, рынки пополняют казну. Замки усиливают защиту и открывают рыцарей.</p></article>
-        <article><span>2</span><h3>Собирайте армии</h3><p>Наберите отряды, выберите свою провинцию и укажите соседнюю землю для похода.</p></article>
-        <article><span>3</span><h3>Читайте поле боя</h3><p>Выберите тактику перед атакой. Состав армии, рельеф и крепости влияют на исход.</p></article>
-        <article><span>4</span><h3>Выбирайте друзей</h3><p>Торговые договоры дают золото. Для нападения на нейтральную державу сначала объявите войну.</p></article>
+  <dialog id="menuDialog" class="menu-dialog">
+    <div class="menu-shell">
+      <header><div><p>Поездка приостановлена</p><h2>Бортовой журнал</h2></div><button id="resumeButton" class="close-button" type="button">Продолжить</button></header>
+      <div class="menu-grid">
+        <section><h3>Задания</h3><div id="missionList" class="mission-list"></div></section>
+        <section><h3>Гараж</h3><div id="garageStats" class="garage-stats"></div><div class="service-grid">
+          <button data-service="fuel" type="button"><strong>Заправить 15 л</strong><span>90 ₽</span></button>
+          <button data-service="repair" type="button"><strong>Полный ремонт</strong><span>по состоянию</span></button>
+          <button data-service="tires" type="button"><strong>Грязевые шины</strong><span>от 900 ₽</span></button>
+          <button data-service="suspension" type="button"><strong>Подвеска</strong><span>от 1 200 ₽</span></button>
+        </div></section>
+        <section class="settings"><h3>Настройки</h3><label>Качество<select id="qualitySelect"><option value=".65">Экономичное</option><option value=".85" selected>Сбалансированное</option><option value="1">Высокое</option></select></label><label>Рулевое управление<select id="controlsSelect"><option value="wheel">Виртуальный руль</option><option value="buttons">Кнопки</option></select></label></section>
       </div>
-      <button class="primary-button dialog-confirm" value="confirm">Понятно <span>✓</span></button>
-    </form>
+      <footer><button id="saveButton" type="button">Сохранить</button><button id="recoverButton" class="danger-button" type="button">Вернуть в гараж</button></footer>
+    </div>
   </dialog>
-
-  <dialog id="endDialog" class="game-dialog end-dialog">
-    <form method="dialog">
-      <span id="endEmblem" class="end-emblem"></span>
-      <p id="endOverline" class="overline"></p>
-      <h2 id="endTitle"></h2>
-      <p id="endText" class="dialog-lead"></p>
-      <div id="endStats" class="result-stats"></div>
-      <button id="newAfterEndButton" class="primary-button" value="confirm">Новая кампания <span>→</span></button>
-    </form>
-  </dialog>
-
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <noscript>Для игры требуется JavaScript.</noscript>
   <script type="module" src="src/app.js"></script>
 </body>

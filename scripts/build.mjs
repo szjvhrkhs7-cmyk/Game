@@ -11,7 +11,7 @@ await mkdir(output, { recursive: true });
 for (const entry of files) await cp(resolve(root, entry), resolve(output, entry), { recursive: true });
 
 const html = await readFile(resolve(output, "index.html"), "utf8");
-const required = ["campaignMap", "provinceLayer", "armyLayer", "formationList", "src/app.js"];
+const required = ["gameCanvas", "steeringWheel", "gasButton", "menuDialog", "src/app.js"];
 for (const marker of required) {
   if (!html.includes(marker)) throw new Error(`Production build is missing: ${marker}`);
 }

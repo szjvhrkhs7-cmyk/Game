@@ -1,4 +1,4 @@
-name: Deploy Game and PayDigest
+name: Deploy Prosyolok and PayDigest
 
 on:
   push:
@@ -62,14 +62,17 @@ jobs:
         run: |
           cp -R payments-news dist/payments-news
           test -f dist/index.html
-          test -f dist/src/regions.js
-          test -f dist/src/systems.js
+          test -f dist/src/game.js
+          test -f dist/src/physics.js
+          test -f dist/src/renderer.js
+          test -f dist/manifest.webmanifest
           test -f dist/payments-news/index.html
+          test $(du -sk dist | cut -f1) -lt 2048
 
       - name: Preserve production build
         uses: actions/upload-artifact@v4
         with:
-          name: crown-and-conquest-production
+          name: prosyolok-production
           path: dist
           if-no-files-found: error
 

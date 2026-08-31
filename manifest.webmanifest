@@ -1,15 +1,13 @@
 {
-  "name": "Crown & Conquest: Европа 1095",
-  "short_name": "Crown & Conquest",
-  "description": "Пошаговая стратегия о средневековой Европе",
+  "name": "Просёлок: мобильный симулятор",
+  "short_name": "Просёлок",
+  "description": "Трёхмерный симулятор вождения по российской деревне",
   "lang": "ru",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "orientation": "any",
-  "background_color": "#12110f",
-  "theme_color": "#17130f",
-  "icons": [
-    { "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
-  ]
+  "orientation": "landscape",
+  "background_color": "#17201d",
+  "theme_color": "#1b2622",
+  "icons": [{ "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
 }

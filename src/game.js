@@ -1,4 +1,4 @@
-import { Renderer, cameraFor } from "./renderer.js";
+import { Renderer, cameraFor } from "./renderer.js?v=2";
 import { MISSIONS, WORLD_SIZE, checkCollision, createWorld, missionDistance, nearestMission, surfaceAt } from "./world.js";
 import { SURFACES, collisionDamage, createVehicleState, refuelVehicle, repairVehicle, stepVehicle, applyUpgrade, clamp } from "./physics.js";
 

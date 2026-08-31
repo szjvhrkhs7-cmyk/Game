@@ -1,10 +1,11 @@
 {
   "name": "crown-and-conquest",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node --check src/app.js && node --check src/data.js && node --check src/regions.js && node --check src/engine.js && node --check sw.js",
-    "test": "node --test tests/*.test.js"
+    "check": "node --check src/app.js && node --check src/data.js && node --check src/regions.js && node --check src/systems.js && node --check src/engine.js && node --check sw.js",
+    "test": "node --test tests/*.test.js",
+    "build": "node scripts/build.mjs"
   }
 }

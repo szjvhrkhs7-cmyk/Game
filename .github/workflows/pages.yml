@@ -39,19 +39,44 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
-      - name: Validate game
-        run: npm test && npm run check
+      - name: Install reproducibly
+        run: npm ci
+
+      - name: Static analysis
+        run: npm run check
+
+      - name: Unit and contract tests
+        run: npm test
+
+      - name: Build production site
+        run: npm run build
 
       - name: Validate PayDigest JavaScript
         run: |
           node --check payments-news/app.js
           node --check payments-news/data.js
 
+      - name: Assemble and verify publication
+        run: |
+          cp -R payments-news dist/payments-news
+          test -f dist/index.html
+          test -f dist/src/regions.js
+          test -f dist/src/systems.js
+          test -f dist/payments-news/index.html
+
+      - name: Preserve production build
+        uses: actions/upload-artifact@v4
+        with:
+          name: crown-and-conquest-production
+          path: dist
+          if-no-files-found: error
+
       - name: Upload combined site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: dist
 
   deploy:
     needs: verify

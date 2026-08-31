@@ -8,8 +8,18 @@ import {
   TERRAIN,
   UNIT_TYPES,
 } from "./data.js";
+import {
+  BATTLE_ORDERS,
+  TAX_LEVELS,
+  createFieldArmy,
+  emptyUnits,
+  processCampaignSystems,
+  queueConstruction,
+  queueRecruitment,
+  resolveFieldBattle,
+} from "./systems.js";
 
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 export const SEASONS = Object.freeze(["Весна", "Лето", "Осень", "Зима"]);
 export const TACTICS = Object.freeze({
   frontal: { id: "frontal", name: "Стальной натиск", description: "Надёжно против обстрела", icon: "⚔" },
@@ -59,6 +69,35 @@ export function createCampaign(playerFaction) {
     Object.keys(FACTIONS).map((id) => [id, createFactionState(id, id === playerFaction)]),
   );
 
+  const provinces = Object.fromEntries(PROVINCES.map((item) => [item.id, {
+    ...clone(item),
+    army: emptyUnits(item.army),
+    settlement: {
+      tier: item.capital ? "capital" : item.population >= 4 ? "city" : item.population >= 3 ? "town" : "village",
+      name: item.name,
+      governor: null,
+    },
+    taxLevel: "normal",
+    constructionQueue: [],
+    recruitmentQueue: [],
+    siege: null,
+    unrest: item.owner === "rebels" ? 35 : 8,
+    moved: false,
+    recruited: false,
+  }]));
+  const armies = {};
+  let nextArmyId = 1;
+  for (const faction of Object.values(FACTIONS)) {
+    if (faction.id === "rebels" || !faction.capital || !provinces[faction.capital]) continue;
+    const id = `army-${nextArmyId}`;
+    nextArmyId += 1;
+    armies[id] = createFieldArmy(id, faction.id, faction.capital, {
+      commander: faction.ruler,
+      units: { levy: 2, spearmen: 1, archers: 1, knights: faction.playable ? 1 : 0 },
+      morale: faction.playable ? 76 : 68,
+    });
+  }
+
   return {
     version: SAVE_VERSION,
     playerFaction,
@@ -66,13 +105,11 @@ export function createCampaign(playerFaction) {
     year: CAMPAIGN_START_YEAR,
     seasonIndex: 0,
     selectedProvince: FACTIONS[playerFaction].capital,
+    selectedArmy: Object.values(armies).find((army) => army.factionId === playerFaction)?.id ?? null,
+    armies,
+    nextArmyId,
     factions,
-    provinces: Object.fromEntries(PROVINCES.map((item) => [item.id, {
-      ...clone(item),
-      unrest: item.owner === "rebels" ? 35 : 8,
-      moved: false,
-      recruited: false,
-    }])),
+    provinces,
     diplomacy: createDiplomacy(),
     objectives: {
       provincesToWin: 55,
@@ -122,9 +159,9 @@ export function armyStrength(army, factionId, tactic = null) {
   );
   let tacticalComposition = 1;
   const unitCount = Math.max(1, sumArmy(army));
-  if (tactic === "flank" && army.knights / unitCount >= 0.2) tacticalComposition = 1.12;
-  if (tactic === "volley" && army.archers / unitCount >= 0.3) tacticalComposition = 1.12;
-  if (tactic === "frontal" && army.levy / unitCount >= 0.45) tacticalComposition = 1.08;
+  if (tactic === "flank" && (army.knights ?? 0) / unitCount >= 0.2) tacticalComposition = 1.12;
+  if (tactic === "volley" && ((army.archers ?? 0) + (army.crossbowmen ?? 0)) / unitCount >= 0.3) tacticalComposition = 1.12;
+  if (tactic === "frontal" && (army.levy ?? 0) / unitCount >= 0.45) tacticalComposition = 1.08;
   return base * (faction.powerBonus ?? 1) * tacticalComposition;
 }
 
@@ -135,7 +172,10 @@ export function provinceEconomy(state, provinceId) {
   const orderFactor = clamp((100 - item.unrest) / 90, 0.35, 1.1);
   const marketLevels = item.buildings.market ?? 0;
   const farmLevels = item.buildings.farm ?? 0;
-  const gold = Math.round((item.income + marketLevels * 70 * faction.marketBonus) * orderFactor);
+  const portIncome = item.coastal ? (item.buildings.port ?? 0) * 95 : 0;
+  const roadFactor = 1 + (item.buildings.road ?? 0) * 0.15;
+  const taxFactor = TAX_LEVELS[item.taxLevel]?.income ?? 1;
+  const gold = Math.round((item.income + marketLevels * 70 * faction.marketBonus + portIncome) * orderFactor * roadFactor * taxFactor);
   const food = Math.round((item.food + farmLevels * 24 * faction.farmBonus) * orderFactor);
   const upkeep = Object.entries(item.army).reduce(
     (total, [unitId, amount]) => total + (UNIT_TYPES[unitId]?.upkeep ?? 0) * amount,
@@ -157,6 +197,10 @@ export function factionEconomy(state, factionId) {
     (otherId) => otherId !== factionId && getDiplomacy(state, factionId, otherId).status === "trade",
   ).length;
   totals.trade = tradePartners * 85;
+  totals.upkeep += Object.values(state.armies ?? {}).filter((army) => army.factionId === factionId).reduce(
+    (sum, army) => sum + Object.entries(army.units).reduce((armySum, [unitId, amount]) => armySum + (UNIT_TYPES[unitId]?.upkeep ?? 0) * amount, 0),
+    0,
+  );
   totals.netGold = totals.gold + totals.trade - totals.upkeep;
   return totals;
 }
@@ -173,46 +217,15 @@ export function buildingCost(province, buildingId) {
 }
 
 export function constructBuilding(state, provinceId, buildingId) {
-  const next = clone(state);
-  const item = next.provinces[provinceId];
-  const building = BUILDING_TYPES[buildingId];
-  if (!item || !building) return { ok: false, state, message: "Постройка недоступна" };
-  if (item.owner !== state.playerFaction) return { ok: false, state, message: "Это не ваша провинция" };
-  const cost = buildingCost(item, buildingId);
-  if (cost.level > 2) return { ok: false, state, message: "Постройка уже достигла высшего уровня" };
-  const treasury = next.factions[state.playerFaction];
-  if (treasury.gold < cost.gold || treasury.authority < cost.authority) {
-    return { ok: false, state, message: "Не хватает золота или авторитета" };
-  }
-  treasury.gold -= cost.gold;
-  treasury.authority -= cost.authority;
-  item.buildings[buildingId] = cost.level;
-  item.unrest = Math.max(0, item.unrest - 4);
-  addLog(next, "build", `${building.name} улучшены в провинции ${item.name}.`);
-  return { ok: true, state: next, message: `${building.name}: уровень ${cost.level}` };
+  const result = queueConstruction(state, provinceId, buildingId);
+  if (result.ok) addLog(result.state, "build", `${BUILDING_TYPES[buildingId].name}: работы начаты в провинции ${state.provinces[provinceId].name}.`);
+  return result;
 }
 
 export function recruitUnit(state, provinceId, unitId) {
-  const next = clone(state);
-  const item = next.provinces[provinceId];
-  const unit = UNIT_TYPES[unitId];
-  if (!item || !unit) return { ok: false, state, message: "Отряд недоступен" };
-  if (item.owner !== state.playerFaction) return { ok: false, state, message: "Набирать войска можно только в своих землях" };
-  if (item.recruited) return { ok: false, state, message: "В этой провинции уже шёл набор в текущем ходу" };
-  if (unit.requirement && !(item.buildings[unit.requirement] > 0)) {
-    return { ok: false, state, message: `Требуется: ${BUILDING_TYPES[unit.requirement].name}` };
-  }
-  const faction = next.factions[state.playerFaction];
-  const goldCost = Math.round(unit.cost * FACTIONS[state.playerFaction].recruitBonus);
-  if (faction.gold < goldCost || faction.food < unit.foodCost) {
-    return { ok: false, state, message: "Не хватает золота или продовольствия" };
-  }
-  faction.gold -= goldCost;
-  faction.food -= unit.foodCost;
-  item.army[unitId] += 1;
-  item.recruited = true;
-  addLog(next, "army", `${unit.name} набраны в провинции ${item.name}.`);
-  return { ok: true, state: next, message: `${unit.name} присоединились к армии` };
+  const result = queueRecruitment(state, provinceId, unitId);
+  if (result.ok) addLog(result.state, "army", `${UNIT_TYPES[unitId].name}: начат набор в провинции ${state.provinces[provinceId].name}.`);
+  return result;
 }
 
 const marchingArmy = (army) => {
@@ -428,15 +441,67 @@ export function offerTrade(state, targetFaction, random = Math.random) {
   return { ok: true, state: next, accepted, message: accepted ? "Договор заключён" : "Предложение отклонено" };
 }
 
+export function offerPeace(state, targetFaction, random = Math.random) {
+  const key = relationKey(state.playerFaction, targetFaction);
+  const relation = state.diplomacy[key];
+  if (!relation || relation.status !== "war") return { ok: false, state, message: "Мирное предложение доступно только во время войны" };
+  const next = clone(state);
+  const accepted = relation.opinion + random() * 90 >= -30;
+  next.diplomacy[key].opinion = clamp(relation.opinion + (accepted ? 35 : -5), -100, 100);
+  if (accepted) next.diplomacy[key].status = "truce";
+  addLog(next, "diplomacy", accepted ? `Заключено перемирие с державой «${FACTIONS[targetFaction].shortName}».` : `${FACTIONS[targetFaction].shortName} отвергает мир.`);
+  return { ok: true, state: next, accepted, message: accepted ? "Перемирие заключено" : "Мир отвергнут" };
+}
+
+export function offerAlliance(state, targetFaction, random = Math.random) {
+  const key = relationKey(state.playerFaction, targetFaction);
+  const relation = state.diplomacy[key];
+  if (!relation || !["trade", "truce", "neutral"].includes(relation.status)) return { ok: false, state, message: "Союз сейчас невозможен" };
+  const player = state.factions[state.playerFaction];
+  if (player.authority < 12) return { ok: false, state, message: "Для союза нужно 12 авторитета" };
+  const next = clone(state);
+  next.factions[state.playerFaction].authority -= 12;
+  const accepted = relation.opinion + random() * 55 >= 55;
+  next.diplomacy[key].opinion = clamp(relation.opinion + (accepted ? 18 : -3), -100, 100);
+  if (accepted) next.diplomacy[key].status = "allied";
+  addLog(next, "diplomacy", accepted ? `Заключён союз с державой «${FACTIONS[targetFaction].shortName}».` : `${FACTIONS[targetFaction].shortName} не готова к союзу.`);
+  return { ok: true, state: next, accepted, message: accepted ? "Союз заключён" : "Союз отклонён" };
+}
+
+export function demandVassalage(state, targetFaction, random = Math.random) {
+  const key = relationKey(state.playerFaction, targetFaction);
+  const relation = state.diplomacy[key];
+  if (!relation || relation.status === "war") return { ok: false, state, message: "Сначала необходимо завершить войну" };
+  const own = getOwnedProvinces(state, state.playerFaction).length;
+  const target = getOwnedProvinces(state, targetFaction).length;
+  const next = clone(state);
+  const accepted = own >= target * 2 && relation.opinion + random() * 50 >= 35;
+  if (accepted) {
+    next.diplomacy[key].status = "vassal";
+    next.diplomacy[key].opinion = 60;
+    next.factions[targetFaction].overlord = state.playerFaction;
+  } else {
+    next.diplomacy[key].opinion = clamp(relation.opinion - 12, -100, 100);
+  }
+  addLog(next, "diplomacy", accepted ? `${FACTIONS[targetFaction].shortName} признаёт вас сюзереном.` : `${FACTIONS[targetFaction].shortName} отвергает требование вассалитета.`);
+  return { ok: true, state: next, accepted, message: accepted ? "Вассалитет принят" : "Требование отвергнуто" };
+}
+
 const collectIncome = (state, factionId) => {
   const faction = state.factions[factionId];
   if (!faction?.alive || factionId === "rebels") return;
   const economy = factionEconomy(state, factionId);
   faction.gold = Math.max(0, faction.gold + economy.netGold);
+  if (faction.overlord && state.factions[faction.overlord]?.alive) {
+    const tribute = Math.max(0, Math.round(economy.gold * 0.15));
+    faction.gold = Math.max(0, faction.gold - tribute);
+    state.factions[faction.overlord].gold += tribute;
+  }
   faction.food = Math.max(0, faction.food + economy.food - getOwnedProvinces(state, factionId).length * 12);
   const ownedCount = getOwnedProvinces(state, factionId).length;
   const authorityGain = factionId === "hre" ? Math.max(1, Math.floor(ownedCount / 3)) : Math.max(1, Math.floor(ownedCount / 5));
   faction.authority = clamp(faction.authority + authorityGain, 0, 100);
+  faction.authority = clamp(faction.authority + getOwnedProvinces(state, factionId).reduce((sum, item) => sum + (item.buildings.temple ?? 0), 0), 0, 100);
   for (const item of getOwnedProvinces(state, factionId)) {
     item.unrest = clamp(item.unrest + (faction.food === 0 ? 10 : -4), 0, 100);
   }
@@ -455,9 +520,11 @@ const aiRecruit = (state, factionId) => {
   if (border.buildings.castle && faction.gold >= UNIT_TYPES.knights.cost) unitId = "knights";
   else if (border.buildings.barracks && faction.gold >= UNIT_TYPES.archers.cost) unitId = "archers";
   const unit = UNIT_TYPES[unitId];
-  faction.gold -= Math.round(unit.cost * FACTIONS[factionId].recruitBonus);
+  const price = Math.round(unit.cost * FACTIONS[factionId].recruitBonus);
+  if ((border.recruitmentQueue?.length ?? 0) >= 3 || faction.food < unit.foodCost) return;
+  faction.gold -= price;
   faction.food = Math.max(0, faction.food - unit.foodCost);
-  border.army[unitId] += 1;
+  border.recruitmentQueue.push({ unitId, turnsRemaining: unit.turns, totalTurns: unit.turns });
 };
 
 const aiBuild = (state, factionId, random) => {
@@ -469,8 +536,9 @@ const aiBuild = (state, factionId, random) => {
   const buildingId = (target.buildings.farm ?? 0) <= (target.buildings.market ?? 0) ? "farm" : "market";
   const cost = buildingCost(target, buildingId);
   if (cost && cost.level <= 2 && faction.gold >= cost.gold) {
+    if ((target.constructionQueue?.length ?? 0) >= 2) return;
     faction.gold -= cost.gold;
-    target.buildings[buildingId] = cost.level;
+    target.constructionQueue.push({ buildingId, level: cost.level, turnsRemaining: BUILDING_TYPES[buildingId].turns, totalTurns: BUILDING_TYPES[buildingId].turns });
   }
 };
 
@@ -478,6 +546,25 @@ const aiCampaign = (state, factionId, random) => {
   if (!state.factions[factionId]?.alive || factionId === "rebels") return;
   aiRecruit(state, factionId);
   aiBuild(state, factionId, random);
+  const fieldArmies = Object.values(state.armies ?? {}).filter((army) => army.factionId === factionId && army.status !== "sieging");
+  for (const army of fieldArmies) {
+    const current = state.provinces[army.regionId];
+    const enemyId = current.neighbors.find((id) => {
+      const province = state.provinces[id];
+      return province.owner !== factionId && getDiplomacy(state, factionId, province.owner).status === "war";
+    });
+    if (enemyId && strengthOfForAi(army.units, factionId) > armyStrength(state.provinces[enemyId].army, state.provinces[enemyId].owner) * 0.85) {
+      const orders = Object.keys(BATTLE_ORDERS);
+      const result = resolveFieldBattle(state, army.id, enemyId, orders[Math.floor(random() * orders.length) % orders.length], random);
+      if (result.ok) Object.assign(state, result.state);
+      return;
+    }
+    const forward = current.neighbors.find((id) => state.provinces[id].owner === factionId && state.provinces[id].neighbors.some((neighborId) => state.provinces[neighborId].owner !== factionId));
+    if (forward && army.movementPoints > 0) {
+      army.regionId = forward;
+      army.movementPoints = Math.max(0, army.movementPoints - 1);
+    }
+  }
   const candidates = [];
   for (const from of getOwnedProvinces(state, factionId)) {
     if (sumArmy(from.army) < 3) continue;
@@ -496,6 +583,11 @@ const aiCampaign = (state, factionId, random) => {
   const tactics = Object.keys(TACTICS);
   resolveAiBattle(state, move.from.id, move.target.id, tactics[Math.floor(random() * tactics.length) % tactics.length], random);
 };
+
+const strengthOfForAi = (units, factionId) => Object.entries(units).reduce(
+  (sum, [unitId, amount]) => sum + (UNIT_TYPES[unitId]?.power ?? 0) * amount,
+  0,
+) * (FACTIONS[factionId]?.powerBonus ?? 1);
 
 const resolveAiBattle = (state, fromId, toId, tacticId, random) => {
   const from = state.provinces[fromId];
@@ -541,6 +633,7 @@ export function endTurn(state, random = Math.random) {
   if (state.gameOver) return { ok: false, state, message: "Кампания завершена" };
   const next = clone(state);
   next.pendingEvent = null;
+  processCampaignSystems(next);
   for (const factionId of Object.keys(next.factions)) collectIncome(next, factionId);
   for (const factionId of Object.keys(next.factions)) {
     if (factionId !== next.playerFaction) aiCampaign(next, factionId, random);
@@ -608,7 +701,8 @@ export function validateCampaignData() {
       }
     }
     for (const unitId of Object.keys(UNIT_TYPES)) {
-      if (!Number.isInteger(item.army[unitId]) || item.army[unitId] < 0) errors.push(`${item.id}: некорректная армия`);
+      const amount = item.army[unitId] ?? 0;
+      if (!Number.isInteger(amount) || amount < 0) errors.push(`${item.id}: некорректная армия`);
     }
   }
   for (const faction of Object.values(FACTIONS).filter((item) => item.playable)) {
@@ -618,11 +712,37 @@ export function validateCampaignData() {
 }
 
 export function hydrateCampaign(rawState) {
-  if (!rawState || rawState.version !== SAVE_VERSION || !FACTIONS[rawState.playerFaction]) return null;
-  const next = clone(rawState);
+  if (!rawState || ![3, SAVE_VERSION].includes(rawState.version) || !FACTIONS[rawState.playerFaction]) return null;
+  let next;
+  if (rawState.version === 3) {
+    next = createCampaign(rawState.playerFaction);
+    next.turn = rawState.turn ?? 1;
+    next.year = rawState.year ?? CAMPAIGN_START_YEAR;
+    next.seasonIndex = rawState.seasonIndex ?? 0;
+    next.diplomacy = clone(rawState.diplomacy ?? next.diplomacy);
+    next.statistics = clone(rawState.statistics ?? next.statistics);
+    next.eventLog = clone(rawState.eventLog ?? next.eventLog);
+    for (const item of PROVINCES) {
+      const old = rawState.provinces?.[item.id];
+      if (!old) return null;
+      next.provinces[item.id].owner = old.owner;
+      next.provinces[item.id].buildings = clone(old.buildings ?? {});
+      next.provinces[item.id].army = emptyUnits(old.army);
+      next.provinces[item.id].unrest = old.unrest ?? next.provinces[item.id].unrest;
+    }
+  } else {
+    next = clone(rawState);
+  }
   for (const item of PROVINCES) {
     if (!next.provinces[item.id]) return null;
+    next.provinces[item.id].army = emptyUnits(next.provinces[item.id].army);
+    next.provinces[item.id].constructionQueue ??= [];
+    next.provinces[item.id].recruitmentQueue ??= [];
   }
+  next.version = SAVE_VERSION;
+  next.armies ??= {};
+  next.nextArmyId ??= Object.keys(next.armies).length + 1;
+  next.selectedArmy ??= null;
   next.pendingEvent ??= null;
   next.gameOver ??= null;
   return next;

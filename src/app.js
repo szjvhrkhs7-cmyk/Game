@@ -24,27 +24,54 @@ import {
   getOwnedProvinces,
   hydrateCampaign,
   moveArmy,
+  offerAlliance,
+  offerPeace,
   offerTrade,
   provinceEconomy,
   recruitUnit,
   resolveBattle,
   sendGift,
+  demandVassalage,
 } from "./engine.js";
 import { MAP_VIEWBOX } from "./regions.js";
+import {
+  BATTLE_ORDERS,
+  BATTLE_FORMATIONS,
+  SETTLEMENT_TIERS,
+  TAX_LEVELS,
+  armiesAt,
+  assaultSiege,
+  buildingSlots,
+  cancelArmyRoute,
+  liftSiege,
+  mergeArmies,
+  moveFieldArmy,
+  occupiedBuildingSlots,
+  planArmyRoute,
+  raiseFieldArmy,
+  resolveFieldBattle,
+  setTaxLevel,
+  soldiersIn,
+  strengthOf,
+  transferUnit,
+} from "./systems.js";
 
-const SAVE_KEY = "crown-and-conquest-campaign-v3";
+const SAVE_KEY = "crown-and-conquest-campaign-v4";
+const MAP_VIEW_KEY = "crown-and-conquest-map-view-v1";
 const SVG_NS = "http://www.w3.org/2000/svg";
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const formatNumber = (value) => new Intl.NumberFormat("ru-RU").format(Math.round(value));
-const statusLabels = { war: "Война", neutral: "Нейтралитет", trade: "Торговля", allied: "Союз" };
+const statusLabels = { war: "Война", truce: "Перемирие", neutral: "Нейтралитет", trade: "Торговля", allied: "Союз", vassal: "Вассалитет" };
 const logIcons = { crown: "♛", build: "♜", army: "♟", march: "➟", victory: "⚔", defeat: "†", war: "⚑", diplomacy: "⚖", world: "◆", event: "☼" };
 
 let campaign = null;
 let selectedFaction = null;
 let marchOrigin = null;
 let pendingBattle = null;
+let armyMoveMode = false;
+let selectedFormation = "line";
 let soundEnabled = true;
 let toastTimer = null;
 const MAP_RATIO = MAP_VIEWBOX.height / MAP_VIEWBOX.width;
@@ -173,7 +200,7 @@ function continueCampaign() {
   campaign = saved;
   selectedFaction = campaign.playerFaction;
   marchOrigin = null;
-  resetMapView();
+  restoreMapView();
   showScreen("campaign");
   renderCampaign();
 }
@@ -230,10 +257,14 @@ function renderMap() {
   const provinceLayer = $("#provinceLayer");
   const labelLayer = $("#labelLayer");
   const armyLayer = $("#armyLayer");
+  const routeLayer = $("#routeLayer");
+  const infrastructureLayer = $("#infrastructureLayer");
   const seaLayer = $("#seaLayer");
   provinceLayer.replaceChildren();
   labelLayer.replaceChildren();
   armyLayer.replaceChildren();
+  routeLayer.replaceChildren();
+  infrastructureLayer.replaceChildren();
   seaLayer.replaceChildren();
 
   for (const sea of SEAS) {
@@ -242,7 +273,10 @@ function renderMap() {
     seaLayer.append(label);
   }
 
-  const reachable = marchOrigin ? new Set(campaign.provinces[marchOrigin].neighbors) : new Set();
+  const selectedFieldArmy = campaign.armies?.[campaign.selectedArmy];
+  const reachable = armyMoveMode && selectedFieldArmy
+    ? new Set(campaign.provinces[selectedFieldArmy.regionId].neighbors)
+    : marchOrigin ? new Set(campaign.provinces[marchOrigin].neighbors) : new Set();
   for (const [regionIndex, template] of PROVINCES.entries()) {
     const item = campaign.provinces[template.id];
     const faction = FACTIONS[item.owner];
@@ -282,35 +316,121 @@ function renderMap() {
       capital.textContent = "◆";
       labelLayer.append(capital);
     }
-    if (item.capital || regionIndex % 4 === 0 || campaign.selectedProvince === item.id) {
-      const label = svgElement("text", { x: centerX, y: centerY + 2, class: item.capital ? "province-label major" : "province-label" });
-      label.textContent = item.name.toUpperCase();
-      labelLayer.append(label);
+    const labelClass = item.capital ? "major" : regionIndex % 4 === 0 ? "medium" : "minor";
+    const label = svgElement("text", { x: centerX, y: centerY + 2, class: `province-label ${labelClass}` });
+    label.textContent = item.name.toUpperCase();
+    labelLayer.append(label);
+
+    if (item.coastal && (item.buildings.port ?? 0) > 0) {
+      const port = svgElement("text", { x: centerX + 9, y: centerY - 7, class: "map-detail port-marker" });
+      port.textContent = "⚓";
+      labelLayer.append(port);
     }
 
-    const soldierCount = armySoldiers(item.army);
-    if (soldierCount > 0 && (item.capital || item.id === campaign.selectedProvince || soldierCount >= 350)) {
-      const markerX = centerX + 16;
-      const markerY = centerY + 17;
-      armyLayer.append(svgElement("circle", { cx: markerX, cy: markerY, r: 12, class: "army-marker" }));
-      const icon = svgElement("text", { x: markerX, y: markerY - 1, class: "army-marker-icon" });
-      icon.textContent = "♟";
-      armyLayer.append(icon);
-      const amount = svgElement("text", { x: markerX, y: markerY + 8, class: "army-marker-text" });
-      amount.textContent = Math.max(1, Math.round(soldierCount / 100));
-      armyLayer.append(amount);
+    if (item.siege) {
+      const siege = svgElement("text", { x: centerX - 13, y: centerY + 17, class: "siege-marker" });
+      siege.textContent = "⊞";
+      labelLayer.append(siege);
     }
   }
 
-  $("#mapModeLabel").textContent = marchOrigin ? `Армия из ${campaign.provinces[marchOrigin].name}: выберите соседнюю землю` : "Выберите провинцию";
-  $("#mapHint").textContent = marchOrigin
-    ? "Подсвечены доступные цели. Повторное нажатие отменит поход."
+  const renderedRoads = new Set();
+  for (const item of Object.values(campaign.provinces)) {
+    if ((item.buildings.road ?? 0) < 1) continue;
+    for (const neighborId of item.neighbors) {
+      const neighbor = campaign.provinces[neighborId];
+      if (!neighbor || (neighbor.buildings.road ?? 0) < 1 || neighbor.owner !== item.owner) continue;
+      const key = [item.id, neighborId].sort().join(":");
+      if (renderedRoads.has(key)) continue;
+      renderedRoads.add(key);
+      infrastructureLayer.append(svgElement("line", {
+        x1: item.center[0], y1: item.center[1], x2: neighbor.center[0], y2: neighbor.center[1], class: "map-detail road-line",
+      }));
+    }
+  }
+
+  if (selectedFieldArmy?.route?.length) {
+    const routePoints = [selectedFieldArmy.regionId, ...selectedFieldArmy.route]
+      .map((id) => campaign.provinces[id]?.center)
+      .filter(Boolean)
+      .map((point) => point.join(","))
+      .join(" ");
+    routeLayer.append(svgElement("polyline", { points: routePoints, class: "army-route" }));
+  }
+
+  const regionArmyOffsets = {};
+  for (const army of Object.values(campaign.armies ?? {})) {
+    const province = campaign.provinces[army.regionId];
+    if (!province) continue;
+    const offset = regionArmyOffsets[army.regionId] ?? 0;
+    regionArmyOffsets[army.regionId] = offset + 1;
+    const [centerX, centerY] = province.center;
+    const markerX = centerX + 14 + offset * 15;
+    const markerY = centerY + 17;
+    const group = svgElement("g", {
+      class: `field-army${campaign.selectedArmy === army.id ? " selected" : ""}${army.status === "sieging" ? " sieging" : ""}`,
+      tabindex: "0",
+      role: "button",
+      "data-army": army.id,
+      "aria-label": `${army.commander}, ${formatNumber(soldiersIn(army.units))} воинов`,
+    });
+    group.append(svgElement("circle", { cx: markerX, cy: markerY, r: 12, class: "army-marker", fill: FACTIONS[army.factionId].darkColor }));
+    const icon = svgElement("text", { x: markerX, y: markerY - 1, class: "army-marker-icon" });
+    icon.textContent = army.status === "sieging" ? "⊞" : "♟";
+    group.append(icon);
+    const amount = svgElement("text", { x: markerX, y: markerY + 8, class: "army-marker-text" });
+    amount.textContent = Math.max(1, Math.round(soldiersIn(army.units) / 100));
+    group.append(amount);
+    group.addEventListener("click", (event) => {
+      event.stopPropagation();
+      campaign.selectedArmy = army.id;
+      campaign.selectedProvince = army.regionId;
+      armyMoveMode = false;
+      renderCampaign();
+      toast(`${army.commander}: армия выбрана`);
+    });
+    group.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") group.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    armyLayer.append(group);
+  }
+
+  $("#mapModeLabel").textContent = armyMoveMode && selectedFieldArmy
+    ? `${selectedFieldArmy.commander}: выберите пункт назначения`
+    : "Выберите регион или армию";
+  $("#mapHint").textContent = armyMoveMode
+    ? "Можно выбрать соседнюю землю для немедленного перехода или дальний регион для маршрута."
     : "Нажмите на провинцию, чтобы открыть управление";
   applyMapView();
 }
 
 function handleProvinceClick(provinceId) {
   playTone();
+  if (armyMoveMode && campaign.selectedArmy) {
+    const army = campaign.armies[campaign.selectedArmy];
+    if (army?.regionId === provinceId) {
+      armyMoveMode = false;
+      renderCampaign();
+      toast("Выбор маршрута отменён");
+      return;
+    }
+    const planned = planArmyRoute(campaign, campaign.selectedArmy, provinceId);
+    if (!planned.ok) {
+      toast(planned.message, true);
+      return;
+    }
+    campaign = planned.state;
+    const firstStep = campaign.armies[campaign.selectedArmy].route[0];
+    if (campaign.provinces[campaign.armies[campaign.selectedArmy].regionId].neighbors.includes(firstStep)) {
+      handleFieldMove(campaign.selectedArmy, firstStep);
+      return;
+    }
+    armyMoveMode = false;
+    saveCampaign();
+    renderCampaign();
+    toast(planned.message);
+    return;
+  }
   if (marchOrigin) {
     if (provinceId === marchOrigin) {
       marchOrigin = null;
@@ -374,35 +494,60 @@ function renderActionTab(item) {
     $("#openDiplomacyFromProvince")?.addEventListener("click", openDiplomacy);
     return;
   }
-
-  const neighbors = item.neighbors.map((id) => campaign.provinces[id]);
+  const stationed = armiesAt(campaign, item.id, campaign.playerFaction);
+  const selected = stationed.find((army) => army.id === campaign.selectedArmy) ?? stationed[0] ?? null;
+  if (selected) campaign.selectedArmy = selected.id;
+  const tax = TAX_LEVELS[item.taxLevel] ?? TAX_LEVELS.normal;
   container.innerHTML = `
     <div class="action-card">
-      <h3>${item.moved ? "Армия уже двигалась" : "Военный поход"}</h3>
-      <p>В поход выступит около двух третей гарнизона. Один отряд останется защищать землю.</p>
-      <button id="startMarchButton" class="option-button" type="button" ${canStartMarch(item) ? "" : "disabled"}>
-        <span class="option-icon">➟</span><span><strong>Выбрать цель на карте</strong><small>${canStartMarch(item) ? "Доступные земли будут подсвечены" : "Нужно не менее двух отрядов и свободное перемещение"}</small></span><span class="option-price">Карта</span>
-      </button>
+      <div class="section-heading"><span>Полевая армия</span><b>${stationed.length} в регионе</b></div>
+      ${selected ? `
+        <div class="commander-card">
+          <span class="commander-seal">${selected.status === "sieging" ? "⊞" : "♟"}</span>
+          <span><strong>${selected.commander}</strong><small>${formatNumber(soldiersIn(selected.units))} воинов • дух ${selected.morale}% • снабжение ${selected.supply}%</small></span>
+        </div>
+        <div class="army-unit-transfer">
+          ${Object.values(UNIT_TYPES).filter((unit) => (selected.units[unit.id] ?? 0) + (item.army[unit.id] ?? 0) > 0).map((unit) => `
+            <div><span>${unit.icon} ${unit.short}</span><button type="button" data-transfer="fromArmy" data-unit="${unit.id}" ${(selected.units[unit.id] ?? 0) < 1 ? "disabled" : ""}>−</button><b>${selected.units[unit.id] ?? 0}</b><button type="button" data-transfer="toArmy" data-unit="${unit.id}" ${(item.army[unit.id] ?? 0) < 1 ? "disabled" : ""}>+</button></div>
+          `).join("")}
+        </div>
+        ${selected.siege ? `
+          <div class="siege-status"><strong>Осада: ${campaign.provinces[selected.siege.targetId].name}</strong><span>Ход ${selected.siege.turns + 1} • подготовка ${selected.siege.progress}%</span></div>
+          <div class="button-row"><button id="assaultButton" class="small-action danger" type="button">Начать штурм</button><button id="liftSiegeButton" class="small-action" type="button">Снять осаду</button></div>
+        ` : `
+          <button id="fieldMarchButton" class="option-button" type="button" ${selected.movementPoints <= 0 ? "disabled" : ""}>
+            <span class="option-icon">➟</span><span><strong>Проложить маршрут</strong><small>${selected.route.length ? `В пути: ${selected.route.length} регионов` : `${selected.movementPoints.toFixed(1)} очка движения`}</small></span><span class="option-price">Карта</span>
+          </button>
+          ${selected.route.length ? `<button id="cancelRouteButton" class="small-action" type="button">Отменить маршрут</button>` : ""}
+        `}
+      ` : `
+        <p>Сформируйте самостоятельную армию из половины гарнизона. Она получит собственный маршрут, снабжение и очки движения.</p>
+        <button id="raiseArmyButton" class="option-button" type="button">
+          <span class="option-icon">♟</span><span><strong>Сформировать армию</strong><small>Требуется не менее четырёх отрядов</small></span><span class="option-price">Создать</span>
+        </button>
+      `}
+      ${stationed.length > 1 && selected ? `<button id="mergeArmiesButton" class="small-action" type="button">Объединить с другой армией</button>` : ""}
     </div>
     <div class="action-card">
-      <h3>Соседние земли</h3>
-      <div class="neighbor-grid">
-        ${neighbors.map((neighbor) => {
-          const relation = getDiplomacy(campaign, campaign.playerFaction, neighbor.owner);
-          const allowed = canMarch(campaign, item.id, neighbor.id).ok;
-          return `<button class="neighbor-button${neighbor.owner !== campaign.playerFaction ? " hostile" : ""}" type="button" data-march-target="${neighbor.id}" ${allowed ? "" : "disabled"} style="--neighbor-color:${FACTIONS[neighbor.owner].color}">
-            <i></i><span><strong>${neighbor.name}</strong><small>${FACTIONS[neighbor.owner].shortName} • ${armySoldiers(neighbor.army)} воинов</small></span><b>${neighbor.owner === campaign.playerFaction ? "Перейти" : relation.status === "war" ? "Атаковать" : "Мир"}</b>
-          </button>`;
-        }).join("")}
+      <div class="section-heading"><span>Налоги и управление</span><b>${tax.name}</b></div>
+      <p>Высокие налоги увеличивают доход, но постепенно снижают порядок.</p>
+      <div class="tax-selector">
+        ${Object.values(TAX_LEVELS).map((level) => `<button type="button" data-tax="${level.id}" class="${level.id === tax.id ? "active" : ""}">${level.name}</button>`).join("")}
       </div>
     </div>
   `;
-  $("#startMarchButton")?.addEventListener("click", () => {
-    marchOrigin = item.id;
+  $("#raiseArmyButton")?.addEventListener("click", () => applyPlayerAction(raiseFieldArmy(campaign, item.id), "success"));
+  $("#fieldMarchButton")?.addEventListener("click", () => {
+    armyMoveMode = true;
     renderMap();
-    toast("Выберите подсвеченную соседнюю провинцию");
+    toast("Выберите пункт назначения на карте");
   });
-  $$('[data-march-target]', container).forEach((button) => button.addEventListener("click", () => handleMarch(item.id, button.dataset.marchTarget)));
+  $("#cancelRouteButton")?.addEventListener("click", () => applyPlayerAction(cancelArmyRoute(campaign, selected.id)));
+  $("#liftSiegeButton")?.addEventListener("click", () => applyPlayerAction(liftSiege(campaign, selected.id)));
+  $("#assaultButton")?.addEventListener("click", () => openBattleDialog({ ...campaign.armies[selected.id].siege, ...campaign.armies[selected.id], kind: "siege", armyId: selected.id, toId: selected.siege.targetId, attacker: selected.factionId, defender: campaign.provinces[selected.siege.targetId].owner, attackerSoldiers: soldiersIn(selected.units), defenderSoldiers: armySoldiers(campaign.provinces[selected.siege.targetId].army), terrain: TERRAIN[campaign.provinces[selected.siege.targetId].terrain] }));
+  $("#mergeArmiesButton")?.addEventListener("click", () => applyPlayerAction(mergeArmies(campaign, selected.id, stationed.find((army) => army.id !== selected.id).id)));
+  $$('[data-transfer]', container).forEach((button) => button.addEventListener("click", () => applyPlayerAction(transferUnit(campaign, item.id, selected.id, button.dataset.unit, button.dataset.transfer))));
+  $$('[data-tax]', container).forEach((button) => button.addEventListener("click", () => applyPlayerAction(setTaxLevel(campaign, item.id, button.dataset.tax))));
 }
 
 function canStartMarch(item) {
@@ -412,30 +557,42 @@ function canStartMarch(item) {
 function renderRecruitTab(item) {
   const own = item.owner === campaign.playerFaction;
   const faction = FACTIONS[campaign.playerFaction];
-  $("#recruitOptions").innerHTML = Object.values(UNIT_TYPES).map((unit) => {
+  const queue = item.recruitmentQueue ?? [];
+  $("#recruitOptions").innerHTML = `
+    <div class="production-summary"><span>Очередь найма</span><strong>${queue.length}/3</strong>${queue.map((entry) => `<small>${UNIT_TYPES[entry.unitId].name}: ${entry.turnsRemaining} х.</small>`).join("")}</div>
+    ${Object.values(UNIT_TYPES).map((unit) => {
     const requirementMet = !unit.requirement || item.buildings[unit.requirement] > 0;
     const price = Math.round(unit.cost * faction.recruitBonus);
-    const disabled = !own || item.recruited || !requirementMet;
-    const detail = !own ? "Только в своих землях" : item.recruited ? "Набор доступен раз за ход" : requirementMet
-      ? `${unit.soldiers} воинов • содержание ${unit.upkeep}`
+    const disabled = !own || queue.length >= 3 || !requirementMet;
+    const detail = !own ? "Только в своих землях" : queue.length >= 3 ? "Очередь заполнена" : requirementMet
+      ? `${unit.soldiers} воинов • ${unit.turns} х. • содержание ${unit.upkeep}`
       : `Требуется: ${BUILDING_TYPES[unit.requirement].name}`;
     return `<button class="option-button" type="button" data-recruit="${unit.id}" ${disabled ? "disabled" : ""}>
       <span class="option-icon">${unit.icon}</span><span><strong>${unit.name}</strong><small class="${requirementMet ? "" : "locked-message"}">${detail}</small></span><span class="option-price"><span>● ${price}</span><span>♨ ${unit.foodCost}</span></span>
     </button>`;
-  }).join("");
+  }).join("")}`;
   $$('[data-recruit]').forEach((button) => button.addEventListener("click", () => applyPlayerAction(recruitUnit(campaign, item.id, button.dataset.recruit), "success")));
 }
 
 function renderBuildTab(item) {
   const own = item.owner === campaign.playerFaction;
-  $("#buildOptions").innerHTML = Object.values(BUILDING_TYPES).map((building) => {
+  const queue = item.constructionQueue ?? [];
+  const slots = buildingSlots(item);
+  const occupied = occupiedBuildingSlots(item);
+  $("#buildOptions").innerHTML = `
+    <div class="production-summary"><span>${SETTLEMENT_TIERS[item.settlement?.tier]?.name ?? "Поселение"} • ячейки ${occupied}/${slots}</span><strong>${queue.length}/2</strong>${queue.map((entry) => `<small>${BUILDING_TYPES[entry.buildingId].name}: ${entry.turnsRemaining} х.</small>`).join("")}</div>
+    ${Object.values(BUILDING_TYPES).map((building) => {
     const cost = buildingCost(item, building.id);
     const level = item.buildings[building.id] ?? 0;
     const maxed = level >= 2;
-    return `<button class="option-button" type="button" data-build="${building.id}" ${!own || maxed ? "disabled" : ""}>
-      <span class="option-icon">${building.icon}</span><span><strong>${building.name} ${level ? `• ур. ${level}` : ""}</strong><small>${maxed ? "Достигнут высший уровень" : building.description}</small></span><span class="option-price">${maxed ? "Макс." : `<span>● ${cost.gold}</span>${cost.authority ? `<span>✦ ${cost.authority}</span>` : ""}`}</span>
+    const queued = queue.some((entry) => entry.buildingId === building.id);
+    const unavailable = building.coastalOnly && !item.coastal;
+    const disabled = !own || maxed || queued || unavailable || queue.length >= 2 || (occupied >= slots && level === 0);
+    const detail = maxed ? "Достигнут высший уровень" : queued ? "Уже строится" : unavailable ? "Требуется морской берег" : `${building.description} • ${building.turns} х.`;
+    return `<button class="option-button" type="button" data-build="${building.id}" ${disabled ? "disabled" : ""}>
+      <span class="option-icon">${building.icon}</span><span><strong>${building.name} ${level ? `• ур. ${level}` : ""}</strong><small>${detail}</small></span><span class="option-price">${maxed ? "Макс." : `<span>● ${cost.gold}</span>${cost.authority ? `<span>✦ ${cost.authority}</span>` : ""}`}</span>
     </button>`;
-  }).join("");
+  }).join("")}`;
   $$('[data-build]').forEach((button) => button.addEventListener("click", () => applyPlayerAction(constructBuilding(campaign, item.id, button.dataset.build), "success")));
 }
 
@@ -450,6 +607,25 @@ function applyPlayerAction(result, tone = "click") {
   renderCampaign();
   toast(result.message);
   playTone(tone);
+}
+
+function handleFieldMove(armyId, targetId) {
+  const result = moveFieldArmy(campaign, armyId, targetId);
+  if (!result.ok) {
+    toast(result.message, true);
+    return;
+  }
+  armyMoveMode = false;
+  if (result.battle) {
+    pendingBattle = result.battle;
+    openBattleDialog(result.battle);
+    return;
+  }
+  campaign = result.state;
+  campaign.selectedProvince = campaign.armies[armyId]?.regionId ?? targetId;
+  saveCampaign();
+  renderCampaign();
+  toast(result.message);
 }
 
 function handleMarch(fromId, toId) {
@@ -476,6 +652,8 @@ function handleMarch(fromId, toId) {
 }
 
 function openBattleDialog(battle) {
+  pendingBattle = battle;
+  selectedFormation = "line";
   const attacker = FACTIONS[battle.attacker];
   const defender = FACTIONS[battle.defender];
   $("#battleSubtitle").textContent = `Битва за ${campaign.provinces[battle.toId].name}. ${battle.terrain.name.toLowerCase()} и укрепления влияют на защитников.`;
@@ -485,17 +663,31 @@ function openBattleDialog(battle) {
   $("#battleDefenderEmblem").style.cssText = `background:${defender.color};color:${defender.accent}`;
   $("#battleAttackerCount").textContent = `${formatNumber(battle.attackerSoldiers)} воинов`;
   $("#battleDefenderCount").textContent = `${formatNumber(battle.defenderSoldiers)} воинов`;
-  $("#tacticsList").innerHTML = Object.values(TACTICS).map((tactic) => `
+  const tactics = battle.kind === "field" || battle.kind === "siege" ? BATTLE_ORDERS : TACTICS;
+  $("#formationList").hidden = !(battle.kind === "field" || battle.kind === "siege");
+  $("#formationList").innerHTML = Object.values(BATTLE_FORMATIONS).map((formation) => `
+    <button class="formation-button${formation.id === selectedFormation ? " active" : ""}" type="button" data-formation="${formation.id}"><span>${formation.icon}</span><strong>${formation.name}</strong><small>${formation.description}</small></button>
+  `).join("");
+  $$('[data-formation]').forEach((button) => button.addEventListener("click", () => {
+    selectedFormation = button.dataset.formation;
+    $$('[data-formation]').forEach((item) => item.classList.toggle("active", item === button));
+  }));
+  $("#tacticsList").innerHTML = Object.values(tactics).map((tactic) => `
     <button class="tactic-button" type="button" data-tactic="${tactic.id}"><span>${tactic.icon}</span><strong>${tactic.name}</strong><small>${tactic.description}</small></button>
   `).join("");
   $$('[data-tactic]').forEach((button) => button.addEventListener("click", () => fightBattle(button.dataset.tactic), { once: true }));
+  $("#autoResolveButton").onclick = () => fightBattle(battle.kind === "field" || battle.kind === "siege" ? "defend" : "frontal");
   $("#battleDialog").showModal();
   playTone("battle");
 }
 
 function fightBattle(tacticId) {
   if (!pendingBattle) return;
-  const result = resolveBattle(campaign, pendingBattle.fromId, pendingBattle.toId, tacticId);
+  const result = pendingBattle.kind === "siege"
+    ? assaultSiege(campaign, pendingBattle.armyId, tacticId, Math.random, { formationId: selectedFormation })
+    : pendingBattle.kind === "field"
+      ? resolveFieldBattle(campaign, pendingBattle.armyId, pendingBattle.toId, tacticId, Math.random, { formationId: selectedFormation })
+      : resolveBattle(campaign, pendingBattle.fromId, pendingBattle.toId, tacticId);
   if (!result.ok) {
     toast(result.message, true);
     return;
@@ -503,6 +695,7 @@ function fightBattle(tacticId) {
   $("#battleDialog").close();
   campaign = result.state;
   campaign.selectedProvince = pendingBattle.toId;
+  campaign.selectedArmy = pendingBattle.armyId ?? campaign.selectedArmy;
   marchOrigin = null;
   pendingBattle = null;
   saveCampaign();
@@ -518,13 +711,14 @@ function showBattleResult(report) {
   $("#resultOverline").textContent = report.attackerWon ? "Поле осталось за вами" : "Армия отступает";
   $("#resultTitle").textContent = report.attackerWon ? `Победа у ${report.province}` : `Поражение у ${report.province}`;
   const tacticText = report.advantage > 1 ? "Тактический выбор дал преимущество." : report.advantage < 1 ? "Противник предугадал ваш манёвр." : "Тактики сторон оказались равноценны.";
-  $("#resultText").textContent = tacticText;
+  const formationText = report.formation ? ` Построение: ${BATTLE_FORMATIONS[report.formation].name.toLowerCase()}.` : "";
+  $("#resultText").textContent = tacticText + formationText;
   const attackerLosses = Math.max(0, report.attackerBefore - report.attackerAfter);
   const defenderLosses = Math.max(0, report.defenderBefore - report.defenderAfter);
   $("#resultStats").innerHTML = `
     <div><small>Ваши потери</small><strong>${formatNumber(attackerLosses)}</strong></div>
     <div><small>Потери врага</small><strong>${formatNumber(defenderLosses)}</strong></div>
-    <div><small>Ваша тактика</small><strong>${TACTICS[report.attackerTactic].icon}</strong></div>
+    <div><small>Ваш приказ</small><strong>${(BATTLE_ORDERS[report.attackerTactic] ?? TACTICS[report.attackerTactic]).icon}</strong></div>
   `;
   dialog.showModal();
   playTone(report.attackerWon ? "success" : "battle");
@@ -546,7 +740,10 @@ function renderDiplomacy() {
       <span class="relation-status ${relation.status}">${statusLabels[relation.status]}</span>
       <span class="diplomacy-actions">
         ${relation.status !== "war" ? `<button class="small-action" type="button" data-diplomacy="gift" data-target="${faction.id}">Дар ●180</button>` : ""}
-        ${relation.status === "neutral" ? `<button class="small-action" type="button" data-diplomacy="trade" data-target="${faction.id}">Торговля ✦5</button>` : ""}
+        ${["neutral", "truce"].includes(relation.status) ? `<button class="small-action" type="button" data-diplomacy="trade" data-target="${faction.id}">Торговля ✦5</button>` : ""}
+        ${relation.status === "war" ? `<button class="small-action" type="button" data-diplomacy="peace" data-target="${faction.id}">Предложить мир</button>` : ""}
+        ${["trade", "truce", "neutral"].includes(relation.status) ? `<button class="small-action" type="button" data-diplomacy="alliance" data-target="${faction.id}">Союз ✦12</button>` : ""}
+        ${relation.status !== "war" && relation.status !== "vassal" ? `<button class="small-action" type="button" data-diplomacy="vassal" data-target="${faction.id}">Вассалитет</button>` : ""}
         ${relation.status !== "war" ? `<button class="small-action war-action" type="button" data-diplomacy="war" data-target="${faction.id}">Война ✦10</button>` : ""}
       </span>
     </article>`;
@@ -558,6 +755,9 @@ function handleDiplomacyAction(action, target) {
   let result;
   if (action === "gift") result = sendGift(campaign, target);
   if (action === "trade") result = offerTrade(campaign, target);
+  if (action === "peace") result = offerPeace(campaign, target);
+  if (action === "alliance") result = offerAlliance(campaign, target);
+  if (action === "vassal") result = demandVassalage(campaign, target);
   if (action === "war") result = declareWar(campaign, target);
   if (!result?.ok) {
     toast(result?.message ?? "Действие недоступно", true);
@@ -642,41 +842,107 @@ function setMapView(next) {
 }
 
 function applyMapView() {
-  $("#campaignMap").setAttribute("viewBox", `${mapView.x} ${mapView.y} ${mapView.width} ${mapView.height}`);
+  const map = $("#campaignMap");
+  map.setAttribute("viewBox", `${mapView.x} ${mapView.y} ${mapView.width} ${mapView.height}`);
+  map.classList.toggle("detail-view", mapView.width < 900);
+  map.classList.toggle("close-view", mapView.width < 620);
 }
 
-function zoomMap(factor) {
+function saveMapView() {
+  try { localStorage.setItem(MAP_VIEW_KEY, JSON.stringify(mapView)); } catch { /* Non-critical preference. */ }
+}
+
+function restoreMapView() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(MAP_VIEW_KEY));
+    if (stored && [stored.x, stored.y, stored.width].every(Number.isFinite)) {
+      setMapView(stored);
+      return;
+    }
+  } catch { /* Fall through to the complete map. */ }
+  resetMapView();
+}
+
+function zoomMap(factor, anchor = null) {
   const newWidth = mapView.width * factor;
   const newHeight = newWidth * MAP_RATIO;
+  const rect = $("#campaignMap").getBoundingClientRect();
+  const relativeX = anchor ? Math.max(0, Math.min(1, (anchor.x - rect.left) / rect.width)) : .5;
+  const relativeY = anchor ? Math.max(0, Math.min(1, (anchor.y - rect.top) / rect.height)) : .5;
   setMapView({
     width: newWidth,
     height: newHeight,
-    x: mapView.x + (mapView.width - newWidth) / 2,
-    y: mapView.y + (mapView.height - newHeight) / 2,
+    x: mapView.x + relativeX * (mapView.width - newWidth),
+    y: mapView.y + relativeY * (mapView.height - newHeight),
   });
 }
 
 function resetMapView() {
   mapView = { x: 0, y: 0, width: MAP_VIEWBOX.width, height: MAP_VIEWBOX.height };
   applyMapView();
+  saveMapView();
 }
 
 function bindMapInteractions() {
   const svg = $("#campaignMap");
+  const pointers = new Map();
+  let pinch = null;
+  let inertiaFrame = null;
+  const stopInertia = () => {
+    if (inertiaFrame) cancelAnimationFrame(inertiaFrame);
+    inertiaFrame = null;
+  };
   svg.addEventListener("wheel", (event) => {
     event.preventDefault();
-    zoomMap(event.deltaY > 0 ? 1.12 : .88);
+    stopInertia();
+    zoomMap(event.deltaY > 0 ? 1.12 : .88, { x: event.clientX, y: event.clientY });
+    saveMapView();
   }, { passive: false });
   svg.addEventListener("pointerdown", (event) => {
+    stopInertia();
     svg.setPointerCapture(event.pointerId);
-    dragging = { clientX: event.clientX, clientY: event.clientY, view: { ...mapView } };
+    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (pointers.size === 1) {
+      dragging = { clientX: event.clientX, clientY: event.clientY, lastX: event.clientX, lastY: event.clientY, lastTime: performance.now(), velocityX: 0, velocityY: 0, view: { ...mapView } };
+      pinch = null;
+    } else if (pointers.size === 2) {
+      const [first, second] = [...pointers.values()];
+      pinch = { distance: Math.hypot(second.x - first.x, second.y - first.y), view: { ...mapView } };
+      dragging = null;
+    }
     draggedDistance = 0;
   });
   svg.addEventListener("pointermove", (event) => {
+    if (!pointers.has(event.pointerId)) return;
+    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (pointers.size === 2 && pinch) {
+      const [first, second] = [...pointers.values()];
+      const distance = Math.hypot(second.x - first.x, second.y - first.y);
+      const center = { x: (first.x + second.x) / 2, y: (first.y + second.y) / 2 };
+      const rect = svg.getBoundingClientRect();
+      const relativeX = Math.max(0, Math.min(1, (center.x - rect.left) / rect.width));
+      const relativeY = Math.max(0, Math.min(1, (center.y - rect.top) / rect.height));
+      const width = pinch.view.width * pinch.distance / Math.max(1, distance);
+      const height = width * MAP_RATIO;
+      draggedDistance = Math.max(draggedDistance, Math.abs(distance - pinch.distance));
+      setMapView({
+        width, height,
+        x: pinch.view.x + relativeX * (pinch.view.width - width),
+        y: pinch.view.y + relativeY * (pinch.view.height - height),
+      });
+      return;
+    }
     if (!dragging) return;
     const rect = svg.getBoundingClientRect();
     const dx = event.clientX - dragging.clientX;
     const dy = event.clientY - dragging.clientY;
+    const now = performance.now();
+    const elapsed = Math.max(1, now - dragging.lastTime);
+    dragging.velocityX = (event.clientX - dragging.lastX) / elapsed;
+    dragging.velocityY = (event.clientY - dragging.lastY) / elapsed;
+    dragging.lastX = event.clientX;
+    dragging.lastY = event.clientY;
+    dragging.lastTime = now;
     draggedDistance = Math.max(draggedDistance, Math.abs(dx) + Math.abs(dy));
     setMapView({
       ...dragging.view,
@@ -684,7 +950,33 @@ function bindMapInteractions() {
       y: dragging.view.y - dy * dragging.view.height / rect.height,
     });
   });
-  const endDrag = () => { dragging = null; setTimeout(() => { draggedDistance = 0; }, 0); };
+  const endDrag = (event) => {
+    pointers.delete(event.pointerId);
+    if (pointers.size === 1) {
+      const [remaining] = [...pointers.values()];
+      dragging = { clientX: remaining.x, clientY: remaining.y, lastX: remaining.x, lastY: remaining.y, lastTime: performance.now(), velocityX: 0, velocityY: 0, view: { ...mapView } };
+      pinch = null;
+      return;
+    }
+    if (dragging && draggedDistance > 6) {
+      const rect = svg.getBoundingClientRect();
+      let velocityX = -dragging.velocityX * mapView.width / rect.width * 16;
+      let velocityY = -dragging.velocityY * mapView.height / rect.height * 16;
+      const animate = () => {
+        velocityX *= .9;
+        velocityY *= .9;
+        if (Math.abs(velocityX) + Math.abs(velocityY) < .08) { inertiaFrame = null; saveMapView(); return; }
+        setMapView({ ...mapView, x: mapView.x + velocityX, y: mapView.y + velocityY });
+        inertiaFrame = requestAnimationFrame(animate);
+      };
+      inertiaFrame = requestAnimationFrame(animate);
+    } else {
+      saveMapView();
+    }
+    dragging = null;
+    pinch = null;
+    setTimeout(() => { draggedDistance = 0; }, 0);
+  };
   svg.addEventListener("pointerup", endDrag);
   svg.addEventListener("pointercancel", endDrag);
 }
@@ -725,8 +1017,8 @@ function bindEvents() {
       toast("Полноэкранный режим недоступен", true);
     }
   });
-  $("#zoomInButton").addEventListener("click", () => zoomMap(.8));
-  $("#zoomOutButton").addEventListener("click", () => zoomMap(1.25));
+  $("#zoomInButton").addEventListener("click", () => { zoomMap(.8); saveMapView(); });
+  $("#zoomOutButton").addEventListener("click", () => { zoomMap(1.25); saveMapView(); });
   $("#resetViewButton").addEventListener("click", resetMapView);
   $$("#provinceTabs button").forEach((button) => button.addEventListener("click", () => selectTab(button.dataset.tab)));
   $("#battleDialog").addEventListener("close", () => {

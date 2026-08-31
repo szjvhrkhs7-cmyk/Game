@@ -146,8 +146,10 @@
               <g id="mapViewport">
                 <g id="seaLayer" aria-hidden="true"></g>
                 <g id="provinceLayer"></g>
+                <g id="infrastructureLayer" pointer-events="none"></g>
+                <g id="routeLayer" pointer-events="none"></g>
                 <g id="labelLayer" pointer-events="none"></g>
-                <g id="armyLayer" pointer-events="none"></g>
+                <g id="armyLayer"></g>
               </g>
             </svg>
             <div class="map-legend" aria-label="Обозначения карты"><span><i class="capital-symbol">◆</i> Столица</span><span><i class="army-symbol">♟</i> Армия</span><span><i class="selected-symbol"></i> Выбрано</span></div>
@@ -212,8 +214,12 @@
         <span class="versus">VS</span>
         <div><span id="battleDefenderEmblem"></span><small>Защитники</small><strong id="battleDefenderCount"></strong></div>
       </div>
+      <div class="battle-phases" aria-label="Фазы сражения"><span>Расстановка</span><span>Контакт</span><span>Главный бой</span><span>Дух</span><span>Преследование</span></div>
+      <button id="autoResolveButton" class="auto-resolve-button" type="button"><span>⚙</span><strong>Быстрый расчёт</strong><small>Командиры самостоятельно выберут построение</small></button>
+      <p class="battle-mode-label">Тактическое командование</p>
+      <div id="formationList" class="formation-list" aria-label="Построение армии"></div>
       <div id="tacticsList" class="tactics-list"></div>
-      <p class="counter-hint">Фланг разбивает натиск, стрелы останавливают фланг, натиск сметает стрелков.</p>
+      <p class="counter-hint">Каждый приказ имеет сильную и слабую сторону. Состав армии, дух, снабжение, рельеф и укрепления влияют на результат.</p>
     </form>
   </dialog>
 

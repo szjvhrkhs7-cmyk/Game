@@ -385,11 +385,25 @@ button:focus-visible, [role="button"]:focus-visible {
 @keyframes borderPulse { 50% { stroke-opacity: .45; } }
 .province-label { fill: rgba(255,248,222,.9); font: 700 6.5px var(--serif); letter-spacing: .035em; text-anchor: middle; paint-order: stroke; stroke: rgba(32,22,15,.8); stroke-width: 2px; stroke-linejoin: round; }
 .province-label.major { font-size: 8px; fill: #fff1bd; }
+.province-label.minor { opacity: 0; }
+.map-detail { opacity: 0; transition: opacity .18s ease; }
+#campaignMap.detail-view .province-label.minor { opacity: .78; }
+#campaignMap.detail-view .map-detail { opacity: .7; }
+#campaignMap.close-view .map-detail { opacity: 1; }
+.road-line { stroke: rgba(224, 193, 132, .72); stroke-width: 2.2; stroke-dasharray: 4 2; vector-effect: non-scaling-stroke; }
+.port-marker { fill: #f0d28c; font: 10px var(--sans); text-anchor: middle; paint-order: stroke; stroke: #17353a; stroke-width: 2px; }
 .capital-label { fill: #ffe49a; font-size: 9px; text-anchor: middle; paint-order: stroke; stroke: #3c2718; stroke-width: 1.5px; }
 .sea-label { fill: rgba(225,231,206,.38); font: italic 15px var(--serif); letter-spacing: .14em; text-anchor: middle; paint-order: stroke; stroke: rgba(14,69,73,.35); stroke-width: 1px; }
 .army-marker { fill: rgba(18,17,15,.89); stroke: rgba(246,221,161,.6); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
 .army-marker-text { fill: #f6e4b8; font: 800 10px var(--sans); text-anchor: middle; dominant-baseline: middle; }
 .army-marker-icon { fill: #d8b967; font: 13px var(--serif); text-anchor: middle; }
+.field-army { cursor: pointer; filter: drop-shadow(0 3px 3px rgba(0,0,0,.45)); }
+.field-army:hover .army-marker, .field-army.selected .army-marker { stroke: #ffe3a0; stroke-width: 2.5; }
+.field-army.selected { filter: url(#selectedGlow); }
+.field-army.sieging .army-marker { stroke: #d77b63; }
+.army-route { fill: none; stroke: #f2d486; stroke-width: 3; stroke-dasharray: 8 5; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; filter: drop-shadow(0 1px 2px #25170e); animation: routeFlow 1.2s linear infinite; }
+@keyframes routeFlow { to { stroke-dashoffset: -13; } }
+.siege-marker { fill: #e78d6f; font: 700 16px var(--serif); text-anchor: middle; paint-order: stroke; stroke: #342016; stroke-width: 2px; }
 
 .map-legend { position: absolute; left: 12px; bottom: 12px; display: flex; gap: 12px; padding: 8px 10px; border: 1px solid rgba(255,255,255,.1); border-radius: 4px; background: rgba(14,25,27,.78); color: rgba(222,222,210,.64); font-size: 9px; backdrop-filter: blur(8px); }
 .map-legend span { display: flex; align-items: center; gap: 5px; }
@@ -422,7 +436,7 @@ button:focus-visible, [role="button"]:focus-visible {
 .province-stats span { color: #655f56; font-size: 8px; }
 
 .army-card { margin: 14px; padding: 14px; border: 1px solid var(--line); border-radius: 5px; background: rgba(0,0,0,.12); }
-.army-composition { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 12px 0; }
+.army-composition { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 12px 0; }
 .army-unit { display: grid; grid-template-columns: 27px 1fr; align-items: center; gap: 5px; padding: 7px; border: 1px solid rgba(255,255,255,.05); border-radius: 3px; background: rgba(255,255,255,.015); }
 .army-unit > span { color: var(--gold); font: 20px var(--serif); text-align: center; }
 .army-unit strong, .army-unit small { display: block; }
@@ -442,6 +456,26 @@ button:focus-visible, [role="button"]:focus-visible {
 .action-card { margin-bottom: 9px; padding: 12px; border: 1px solid var(--line); border-radius: 4px; background: rgba(255,255,255,.015); }
 .action-card h3 { margin: 0 0 5px; font: 600 14px var(--serif); }
 .action-card p { margin: 0 0 10px; color: #7d7569; font-size: 9px; line-height: 1.45; }
+.commander-card { display: grid; grid-template-columns: 42px 1fr; align-items: center; gap: 9px; margin: 10px 0; padding: 9px; border: 1px solid rgba(217,183,104,.14); border-radius: 4px; background: linear-gradient(135deg, rgba(217,183,104,.05), transparent); }
+.commander-seal { width: 38px; height: 42px; display: grid; place-items: center; border-radius: 3px 3px 12px 12px; background: #32281b; color: var(--gold-bright); font: 21px var(--serif); }
+.commander-card strong, .commander-card small { display: block; }
+.commander-card strong { font: 600 13px var(--serif); }
+.commander-card small { margin-top: 3px; color: #847b6d; font-size: 8px; }
+.army-unit-transfer { display: grid; gap: 4px; margin: 8px 0 10px; }
+.army-unit-transfer > div { display: grid; grid-template-columns: 1fr 25px 22px 25px; align-items: center; gap: 3px; color: #938a7a; font-size: 8px; }
+.army-unit-transfer button { height: 23px; padding: 0; border: 1px solid var(--line); border-radius: 3px; background: #211e19; color: var(--gold); }
+.army-unit-transfer button:disabled { opacity: .25; }
+.army-unit-transfer b { text-align: center; color: #d3c3a3; }
+.small-action { min-height: 30px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 3px; background: #242019; color: #b8aa91; font-size: 9px; }
+.small-action:hover { border-color: var(--line-strong); color: var(--gold-bright); }
+.small-action.danger { color: #d27b70; }
+.button-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.siege-status { display: grid; gap: 3px; margin: 9px 0; padding: 9px; border-left: 2px solid #b85845; background: rgba(142,52,40,.1); }
+.siege-status strong { color: #d3b796; font: 600 12px var(--serif); }
+.siege-status span { color: #8e7869; font-size: 8px; }
+.tax-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.tax-selector button { height: 30px; border: 1px solid var(--line); border-radius: 3px; background: #1e1b17; color: #756e63; font-size: 8px; }
+.tax-selector button.active { border-color: #9f8044; background: rgba(217,183,104,.08); color: var(--gold-bright); }
 .neighbor-grid { display: grid; gap: 6px; }
 .neighbor-button { display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: 8px; width: 100%; min-height: 39px; padding: 6px 8px; border: 1px solid rgba(255,255,255,.07); border-radius: 3px; background: #1a1815; color: #bdb29f; text-align: left; }
 .neighbor-button:hover { border-color: var(--line-strong); background: #252019; }
@@ -465,6 +499,9 @@ button:focus-visible, [role="button"]:focus-visible {
 .option-price { display: grid; gap: 2px; justify-items: end; color: #bca56e; font-size: 9px; }
 .option-price span::before { margin-right: 3px; color: #72654a; }
 .locked-message { padding: 5px; color: #8e7355 !important; }
+.production-summary { display: grid; grid-template-columns: 1fr auto; gap: 3px 8px; margin-bottom: 8px; padding: 9px; border: 1px solid var(--line); border-radius: 4px; background: rgba(0,0,0,.13); color: #8b8273; font-size: 9px; }
+.production-summary strong { color: var(--gold); }
+.production-summary small { grid-column: 1 / -1; color: #a2947b; }
 
 /* Dialogs */
 .game-dialog {
@@ -493,8 +530,22 @@ button:focus-visible, [role="button"]:focus-visible {
 .battle-balance small { color: #766f64; font-size: 8px; text-transform: uppercase; }
 .battle-balance strong { font: 600 18px var(--serif); }
 .versus { color: #77633e; font: italic 17px var(--serif); text-align: center; }
-.tactics-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.tactic-button { min-height: 142px; display: grid; align-content: center; justify-items: center; gap: 7px; padding: 12px 8px; border: 1px solid var(--line); border-radius: 5px; background: rgba(255,255,255,.018); color: var(--ink); text-align: center; }
+.battle-phases { display: grid; grid-template-columns: repeat(5, 1fr); margin: -8px 0 14px; color: #645e54; font-size: 7px; text-align: center; text-transform: uppercase; }
+.battle-phases span { padding-top: 7px; border-top: 1px solid var(--line); }
+.battle-phases span:first-child { border-color: var(--gold); color: var(--gold); }
+.auto-resolve-button { width: 100%; display: grid; grid-template-columns: 34px 1fr; gap: 2px 8px; align-items: center; padding: 10px; border: 1px solid var(--line-strong); border-radius: 4px; background: rgba(217,183,104,.055); color: var(--ink); text-align: left; }
+.auto-resolve-button > span { grid-row: 1 / 3; color: var(--gold); font-size: 20px; text-align: center; }
+.auto-resolve-button strong { font: 600 12px var(--serif); }
+.auto-resolve-button small { color: #7c7468; font-size: 8px; }
+.battle-mode-label { margin: 16px 0 7px; color: var(--gold); font-size: 8px; letter-spacing: .12em; text-transform: uppercase; }
+.tactics-list { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.formation-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; }
+.formation-button { min-height: 64px; display: grid; grid-template-columns: 32px 1fr; grid-template-rows: auto auto; align-items: center; gap: 0 8px; padding: 8px; border: 1px solid var(--line); border-radius: 5px; background: rgba(255,255,255,.018); color: var(--ink); text-align: left; }
+.formation-button span { grid-row: 1 / 3; color: var(--gold); font: 24px var(--serif); text-align: center; }
+.formation-button strong { font: 600 11px var(--serif); }
+.formation-button small { color: #7c7468; font-size: 8px; }
+.formation-button:hover, .formation-button.active { border-color: var(--gold); background: rgba(217,183,104,.09); }
+.tactic-button { min-height: 130px; display: grid; align-content: center; justify-items: center; gap: 7px; padding: 10px 6px; border: 1px solid var(--line); border-radius: 5px; background: rgba(255,255,255,.018); color: var(--ink); text-align: center; }
 .tactic-button:hover { border-color: var(--gold); background: rgba(217,183,104,.065); transform: translateY(-2px); }
 .tactic-button > span { color: var(--gold); font: 32px var(--serif); }
 .tactic-button strong { font: 600 13px var(--serif); }
@@ -520,6 +571,9 @@ button:focus-visible, [role="button"]:focus-visible {
 .relation-status { display: inline-flex; justify-content: center; padding: 5px 7px; border: 1px solid var(--line); border-radius: 99px; color: #aa9f8c; font-size: 8px; font-weight: 800; text-transform: uppercase; }
 .relation-status.war { border-color: rgba(187,76,70,.4); color: #d97872; }
 .relation-status.trade { border-color: rgba(106,151,100,.4); color: #86ad7e; }
+.relation-status.truce { border-color: rgba(124,145,162,.45); color: #9cb6c8; }
+.relation-status.allied { border-color: rgba(81,142,117,.55); color: #8bc7a6; }
+.relation-status.vassal { border-color: rgba(194,157,82,.55); color: #d7b86f; }
 .diplomacy-actions { display: flex; justify-content: flex-end; gap: 5px; }
 .small-action { min-height: 32px; padding: 0 9px; border: 1px solid var(--line); border-radius: 3px; background: #211e19; color: #aa9e8a; font-size: 8px; font-weight: 700; }
 .small-action:hover { border-color: var(--gold-dark); color: var(--gold-bright); }

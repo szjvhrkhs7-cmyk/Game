@@ -10,6 +10,7 @@ namespace CradleOfTitans.Progression
         [SerializeField] private List<AbilityDefinition> unlockedCores = new();
 
         private readonly HashSet<AbilityId> unlockedAbilities = new();
+        private readonly HashSet<AbilityId> runtimeUnlocks = new();
 
         public event Action<AbilityId> AbilityUnlocked;
 
@@ -33,9 +34,23 @@ namespace CradleOfTitans.Progression
             AbilityUnlocked?.Invoke(definition.Id);
         }
 
+        public void Unlock(AbilityId id)
+        {
+            if (id == AbilityId.None || unlockedAbilities.Contains(id))
+                return;
+
+            runtimeUnlocks.Add(id);
+            unlockedAbilities.Add(id);
+            AbilityUnlocked?.Invoke(id);
+            ResolveSynergies();
+        }
+
         public void RebuildRuntimeState()
         {
             unlockedAbilities.Clear();
+
+            foreach (AbilityId id in runtimeUnlocks)
+                unlockedAbilities.Add(id);
 
             foreach (AbilityDefinition core in unlockedCores)
             {
@@ -43,6 +58,11 @@ namespace CradleOfTitans.Progression
                     unlockedAbilities.Add(core.Id);
             }
 
+            ResolveSynergies();
+        }
+
+        private void ResolveSynergies()
+        {
             bool changed;
             do
             {
@@ -66,12 +86,12 @@ namespace CradleOfTitans.Progression
                         }
                     }
 
-                    if (allUnlocked)
-                    {
-                        unlockedAbilities.Add(core.SynergyResult);
-                        AbilityUnlocked?.Invoke(core.SynergyResult);
-                        changed = true;
-                    }
+                    if (!allUnlocked)
+                        continue;
+
+                    unlockedAbilities.Add(core.SynergyResult);
+                    AbilityUnlocked?.Invoke(core.SynergyResult);
+                    changed = true;
                 }
             }
             while (changed);

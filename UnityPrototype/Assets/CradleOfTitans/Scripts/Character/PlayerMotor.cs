@@ -57,6 +57,20 @@ namespace CradleOfTitans.Character
                 cameraReference = Camera.main.transform;
         }
 
+        public void Configure(Transform cameraTransform, PlayerProgression playerProgression)
+        {
+            cameraReference = cameraTransform;
+            progression = playerProgression;
+        }
+
+        public void ApplyLaunch(Vector3 velocity)
+        {
+            planarVelocity = new Vector3(velocity.x, 0f, velocity.z);
+            verticalVelocity = velocity.y;
+            wallSliding = false;
+            jumpsUsed = Mathf.Max(1, jumpsUsed);
+        }
+
         private void Update()
         {
             if (mantling)
@@ -125,6 +139,9 @@ namespace CradleOfTitans.Character
             if (!Physics.Raycast(origin, desiredMoveDirection.normalized, out RaycastHit hit, wallCheckDistance, environmentMask, QueryTriggerInteraction.Ignore))
                 return;
 
+            if (hit.transform == transform || hit.transform.IsChildOf(transform))
+                return;
+
             if (Mathf.Abs(Vector3.Dot(hit.normal, Vector3.up)) > 0.35f)
                 return;
 
@@ -185,6 +202,9 @@ namespace CradleOfTitans.Character
             Vector3 headOrigin = feet + Vector3.up * mantleMaxHeight;
 
             if (!Physics.Raycast(chestOrigin, forward, out RaycastHit obstacleHit, mantleForwardProbe, environmentMask, QueryTriggerInteraction.Ignore))
+                return;
+
+            if (obstacleHit.transform == transform || obstacleHit.transform.IsChildOf(transform))
                 return;
 
             if (Vector3.Dot(obstacleHit.normal, Vector3.up) > 0.35f)

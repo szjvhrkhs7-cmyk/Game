@@ -6,16 +6,14 @@ namespace CradleOfTitans.Targeting
     public sealed class LockOnSystem : MonoBehaviour
     {
         [SerializeField] private Camera viewCamera;
-        [SerializeField] private LayerMask targetMask;
-        [SerializeField] private LayerMask occlusionMask;
+        [SerializeField] private LayerMask targetMask = ~0;
+        [SerializeField] private LayerMask occlusionMask = ~0;
         [SerializeField] private float searchRadius = 24f;
         [Range(10f, 180f)] [SerializeField] private float maxViewAngle = 85f;
-        [SerializeField] private float scanInterval = 0.1f;
         [SerializeField] private float ownerTurnSpeed = 12f;
         [SerializeField] private KeyCode toggleKey = KeyCode.Q;
 
         private readonly Collider[] overlapBuffer = new Collider[48];
-        private float nextScanTime;
         private LockOnTarget currentTarget;
 
         public event Action<LockOnTarget> TargetChanged;
@@ -28,31 +26,31 @@ namespace CradleOfTitans.Targeting
                 viewCamera = Camera.main;
         }
 
+        public void Configure(Camera camera, LayerMask targets, LayerMask occlusion)
+        {
+            viewCamera = camera;
+            targetMask = targets;
+            occlusionMask = occlusion;
+        }
+
         private void Update()
         {
             if (Input.GetKeyDown(toggleKey))
+                Toggle();
+
+            if (currentTarget == null)
+                return;
+
+            if (!IsValid(currentTarget))
             {
-                if (currentTarget != null)
-                    SetTarget(null);
-                else
-                    SetTarget(FindBestTarget());
+                SetTarget(null);
+                return;
             }
 
-            if (currentTarget != null)
-            {
-                if (!IsValid(currentTarget))
-                    SetTarget(null);
-                else
-                    FaceCurrentTarget();
-
-                float wheel = Input.mouseScrollDelta.y;
-                if (Mathf.Abs(wheel) > 0.01f)
-                    Cycle(wheel > 0f ? 1 : -1);
-            }
-            else if (Time.time >= nextScanTime)
-            {
-                nextScanTime = Time.time + Mathf.Max(0.02f, scanInterval);
-            }
+            FaceCurrentTarget();
+            float wheel = Input.mouseScrollDelta.y;
+            if (Mathf.Abs(wheel) > 0.01f)
+                Cycle(wheel > 0f ? 1 : -1);
         }
 
         public void Toggle()
@@ -76,8 +74,14 @@ namespace CradleOfTitans.Targeting
                 return transform.position + transform.forward * fallbackDistance;
 
             Ray ray = new(viewCamera.transform.position, viewCamera.transform.forward);
-            if (Physics.Raycast(ray, out RaycastHit hit, fallbackDistance, ~0, QueryTriggerInteraction.Ignore))
+            RaycastHit[] hits = Physics.RaycastAll(ray, fallbackDistance, ~0, QueryTriggerInteraction.Ignore);
+            Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+            foreach (RaycastHit hit in hits)
+            {
+                if (hit.transform == transform || hit.transform.IsChildOf(transform))
+                    continue;
                 return hit.point;
+            }
 
             return ray.origin + ray.direction * fallbackDistance;
         }
@@ -156,10 +160,16 @@ namespace CradleOfTitans.Targeting
             if (Vector3.Angle(viewCamera.transform.forward, toTarget) > maxViewAngle * 1.35f)
                 return false;
 
-            if (!Physics.Raycast(origin, toTarget.normalized, out RaycastHit hit, toTarget.magnitude, occlusionMask, QueryTriggerInteraction.Ignore))
-                return true;
+            RaycastHit[] hits = Physics.RaycastAll(origin, toTarget.normalized, toTarget.magnitude, occlusionMask, QueryTriggerInteraction.Ignore);
+            Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+            foreach (RaycastHit hit in hits)
+            {
+                if (hit.transform == transform || hit.transform.IsChildOf(transform))
+                    continue;
+                return hit.transform == target.transform || hit.transform.IsChildOf(target.transform);
+            }
 
-            return hit.transform == target.transform || hit.transform.IsChildOf(target.transform);
+            return true;
         }
 
         private void FaceCurrentTarget()

@@ -22,6 +22,15 @@ namespace CradleOfTitans.World
             closedLocalPosition = movingPart.localPosition;
         }
 
+        public void Configure(AbilityId ability, Transform part, Vector3 openOffset, float speed = 4f)
+        {
+            requiredAbility = ability;
+            movingPart = part != null ? part : transform;
+            localOpenOffset = openOffset;
+            openSpeed = Mathf.Max(0.1f, speed);
+            closedLocalPosition = movingPart.localPosition;
+        }
+
         private void OnTriggerEnter(Collider other)
         {
             PlayerProgression candidate = other.GetComponentInParent<PlayerProgression>();

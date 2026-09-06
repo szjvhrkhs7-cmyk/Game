@@ -1,4 +1,4 @@
-name: Deploy Prosyolok and PayDigest
+name: Deploy Prosyolok, Cradle and PayDigest
 
 on:
   push:
@@ -58,6 +58,12 @@ jobs:
           node --check payments-news/app.js
           node --check payments-news/data.js
 
+      - name: Validate Cradle browser build
+        run: |
+          node --check cradle/game.js
+          test -f cradle/index.html
+          test -f cradle/style.css
+
       - name: Assemble and verify publication
         run: |
           cp -R payments-news dist/payments-news
@@ -66,6 +72,8 @@ jobs:
           test -f dist/src/physics.js
           test -f dist/src/renderer.js
           test -f dist/manifest.webmanifest
+          test -f dist/cradle/index.html
+          test -f dist/cradle/game.js
           test -f dist/payments-news/index.html
           test $(du -sk dist | cut -f1) -lt 2048
 

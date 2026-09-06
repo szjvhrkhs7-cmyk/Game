@@ -16,23 +16,37 @@ namespace CradleOfTitans.CameraSystem
         [SerializeField] private float maxPitch = 62f;
         [SerializeField] private float smoothTime = 0.06f;
         [SerializeField] private float collisionRadius = 0.22f;
+        [Header("Vertical framing")]
+        [SerializeField] private float verticalLookAhead = 0.42f;
+        [SerializeField] private float maxLookAhead = 1.25f;
+        [SerializeField] private float lookAheadSmoothing = 5f;
 
+        private readonly RaycastHit[] collisionHits = new RaycastHit[12];
         private float yaw;
         private float pitch = 18f;
+        private float currentVerticalLookAhead;
         private Vector3 velocity;
+        private Vector3 previousTargetPosition;
+        private bool hasPreviousTargetPosition;
 
         public void Configure(Transform followTarget, LockOnSystem lockSystem)
         {
             target = followTarget;
             lockOn = lockSystem;
             if (target != null)
+            {
                 yaw = target.eulerAngles.y;
+                previousTargetPosition = target.position;
+                hasPreviousTargetPosition = true;
+            }
         }
 
         private void LateUpdate()
         {
             if (target == null)
                 return;
+
+            UpdateVerticalFraming();
 
             if (lockOn != null && lockOn.IsLocked)
             {
@@ -48,15 +62,34 @@ namespace CradleOfTitans.CameraSystem
             }
 
             Quaternion orbit = Quaternion.Euler(pitch, yaw, 0f);
-            Vector3 pivot = target.position + Vector3.up * height;
+            Vector3 pivot = target.position + Vector3.up * (height + currentVerticalLookAhead);
             Vector3 desired = pivot - orbit * Vector3.forward * distance;
             Vector3 direction = desired - pivot;
             float desiredDistance = direction.magnitude;
 
-            if (Physics.SphereCast(pivot, collisionRadius, direction.normalized, out RaycastHit hit, desiredDistance, ~0, QueryTriggerInteraction.Ignore))
+            if (desiredDistance > 0.001f)
             {
-                if (hit.transform != target && !hit.transform.IsChildOf(target))
-                    desired = pivot + direction.normalized * Mathf.Max(0.35f, hit.distance - collisionRadius);
+                int hitCount = Physics.SphereCastNonAlloc(
+                    pivot,
+                    collisionRadius,
+                    direction.normalized,
+                    collisionHits,
+                    desiredDistance,
+                    ~0,
+                    QueryTriggerInteraction.Ignore);
+
+                float nearestValidDistance = desiredDistance;
+                for (int i = 0; i < hitCount; i++)
+                {
+                    Transform hitTransform = collisionHits[i].transform;
+                    if (hitTransform == null || hitTransform == target || hitTransform.IsChildOf(target))
+                        continue;
+
+                    nearestValidDistance = Mathf.Min(nearestValidDistance, collisionHits[i].distance);
+                }
+
+                if (nearestValidDistance < desiredDistance)
+                    desired = pivot + direction.normalized * Mathf.Max(0.35f, nearestValidDistance - collisionRadius);
             }
 
             transform.position = Vector3.SmoothDamp(transform.position, desired, ref velocity, smoothTime);
@@ -65,7 +98,26 @@ namespace CradleOfTitans.CameraSystem
             if (lockOn != null && lockOn.IsLocked)
                 lookPoint = Vector3.Lerp(pivot, lockOn.CurrentTarget.AimPoint, 0.5f);
 
-            transform.rotation = Quaternion.LookRotation(lookPoint - transform.position, Vector3.up);
+            Vector3 lookDirection = lookPoint - transform.position;
+            if (lookDirection.sqrMagnitude > 0.0001f)
+                transform.rotation = Quaternion.LookRotation(lookDirection, Vector3.up);
+        }
+
+        private void UpdateVerticalFraming()
+        {
+            if (!hasPreviousTargetPosition)
+            {
+                previousTargetPosition = target.position;
+                hasPreviousTargetPosition = true;
+                return;
+            }
+
+            float deltaTime = Mathf.Max(Time.deltaTime, 0.0001f);
+            float verticalSpeed = (target.position.y - previousTargetPosition.y) / deltaTime;
+            previousTargetPosition = target.position;
+
+            float targetLookAhead = Mathf.Clamp(verticalSpeed * verticalLookAhead * 0.08f, -maxLookAhead * 0.45f, maxLookAhead);
+            currentVerticalLookAhead = Mathf.Lerp(currentVerticalLookAhead, targetLookAhead, 1f - Mathf.Exp(-lookAheadSmoothing * Time.deltaTime));
         }
     }
 }

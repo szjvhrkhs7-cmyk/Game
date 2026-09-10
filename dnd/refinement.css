@@ -4,7 +4,7 @@
 .page-corners, .entry-ribbon, .stage7-corner-fold,
 .stage7-page-guides, .stage7-footer-ornament, .stage7-sketch-caption,
 .stage6-row-mark, .stage5-sketch-layer, .placeholder-ornament,
-.character-seal, .scene-caption { display: none !important; }
+.character-seal, .scene-caption, .mountain-mark, .ink-sketch svg { display: none !important; }
 .scene::before, .scene::after { background: none; box-shadow: none; }
 .book-spread { border-radius: 3px; overflow: hidden; background: var(--paper); }
 .book-spread::before, .book-spread::after,
@@ -123,11 +123,11 @@ h1, h2, .entry-header h2 { letter-spacing: -.02em; line-height: 1.08; font-weigh
   .entry-header h2, .character-card h2, .atlas-card h2 { font-size: 28px !important; }
   .entry-header { padding-right: 62px; }
   .entry-title-block { width: 100%; max-width: none; }
-  .stage3-edit-character, .stage4-edit-atlas { top: 12px; right: 12px; min-height: 44px; }
+  .stage3-edit-character, .stage4-edit-atlas { top: 88px !important; right: 18px !important; min-height: 44px; }
   .character-card > .kicker, .atlas-card > .kicker { margin-bottom: 16px; }
   .book-shell.show-detail .page-navigation { position: relative; margin: 0 0 16px; padding: 0 0 6px; border-top: 0; border-bottom: 1px solid #73532b35; }
   .book-spread > article { display: flex; flex-direction: column; }
-  .book-shell.show-detail .book-spread > article { display: flex; }
+  .book-shell.show-detail .book-spread > article { display: flex !important; }
   .page-navigation { order: -1; }
   .atlas-card > p:not(.kicker):not(.entry-date):not(.handwritten) { max-width: 100%; }
   .writing-toolbar button { min-width: 40px; min-height: 44px; }

@@ -1,4 +1,4 @@
-name: Deploy Prosyolok, Cradle and PayDigest
+name: Deploy Prosyolok, Cradle, PayDigest and DnD Journal
 
 on:
   push:
@@ -64,9 +64,15 @@ jobs:
           test -f cradle/index.html
           test -f cradle/style.css
 
+      - name: Validate DnD journal
+        run: |
+          test -f dnd/index.html
+          grep -q "Путевой дневник" dnd/index.html
+
       - name: Assemble and verify publication
         run: |
           cp -R payments-news dist/payments-news
+          cp -R dnd dist/dnd
           test -f dist/index.html
           test -f dist/src/game.js
           test -f dist/src/physics.js
@@ -75,6 +81,7 @@ jobs:
           test -f dist/cradle/index.html
           test -f dist/cradle/game.js
           test -f dist/payments-news/index.html
+          test -f dist/dnd/index.html
           test $(du -sk dist | cut -f1) -lt 2048
 
       - name: Preserve production build

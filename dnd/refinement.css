@@ -1,0 +1,136 @@
+/* Reference pass: restrained bookbinding, readable rag paper and compact indexes. */
+:root { --paper: #e9ddc4; --ink: #382d24; --ink-soft: #75624f; color-scheme: light; }
+[hidden] { display: none !important; }
+.page-corners, .entry-ribbon, .stage7-corner-fold,
+.stage7-page-guides, .stage7-footer-ornament, .stage7-sketch-caption,
+.stage6-row-mark, .stage5-sketch-layer, .placeholder-ornament,
+.character-seal, .scene-caption { display: none !important; }
+.scene::before, .scene::after { background: none; box-shadow: none; }
+.book-spread { border-radius: 3px; overflow: hidden; background: var(--paper); }
+.book-spread::before, .book-spread::after,
+.book-spread > section::before, .book-spread > section::after,
+.book-spread > article::before, .book-spread > article::after { content: none !important; }
+.book-spread > section, .book-spread > article {
+  background: #e9ddc4 url('./assets/paper.webp') center / 100% 100% !important;
+  border-radius: 2px !important;
+  box-shadow: inset 0 0 14px #6c4f2929 !important;
+  padding: 36px 32px 24px;
+}
+.book-spread > article { touch-action: pan-y pinch-zoom; }
+.bookmark-tabs { gap: 7px !important; left: 24px !important; top: -29px; }
+.bookmark-tab, .bookmark-tab.is-active {
+  min-height: 44px; height: 44px; margin: 0 !important; padding: 5px 17px 8px;
+  border-radius: 2px 3px 0 0 !important; clip-path: none !important;
+  transform: none !important; border: 1px solid #b1956560;
+  color: #dfcfaf; font-size: 17px; font-weight: 500;
+  box-shadow: inset 0 0 12px #100b0866, 0 2px 3px #100b0844;
+}
+.bookmark-tab--chronicles { background: #642c27 !important; }
+.bookmark-tab--characters { background: #334236 !important; }
+.bookmark-tab--atlas { background: #3f4846 !important; }
+.bookmark-tab::before { inset: 3px 4px 5px; height: auto; border: 1px solid #d1b67e26; background: none; }
+.bookmark-tab::after { background: url('./assets/paper.webp') center / cover; opacity: .12; mix-blend-mode: luminosity; }
+.bookmark-tab.is-active { color: #f5e6c8; box-shadow: inset 0 0 9px #100b0855, 0 -2px 0 #b8945866; }
+.bookmark-tab:hover { filter: brightness(1.12); }
+.bookmark-rule { display: none; }
+.campaign-heading, .placeholder-header { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #73532b40; }
+h1, h2, .entry-header h2 { letter-spacing: -.02em; line-height: 1.08; font-weight: 600; }
+.campaign-heading h1, .placeholder-header h1 { font-size: 30px; }
+.placeholder-header > p:last-child { font-size: 16px; line-height: 1.3; margin-bottom: 0; }
+.kicker { font-size: 12px; }
+.day-list, .character-list { gap: 3px; }
+.day-row, .character-row {
+  transform: none !important; clip-path: none !important; border-radius: 3px !important;
+  background: transparent !important; box-shadow: none !important;
+  border: 1px solid transparent; border-bottom-color: #73532b24;
+  padding: 9px 8px; min-height: 74px;
+}
+.day-row::before, .day-row::after, .character-row::before, .character-row::after { content: none !important; }
+.day-row.is-current, .character-row.is-current { background: #ac85531a !important; border-color: #73532b4d; }
+.day-row:hover, .character-row:hover, .atlas-tile:hover { background-color: #ac85531a !important; }
+.day-copy strong { font-size: 19px; line-height: 1.12; }
+.day-copy small, .character-row small { font-size: 14px; }
+.day-thumb { border-radius: 2px; filter: saturate(.55) sepia(.18); box-shadow: none; }
+.character-thumb { background: transparent !important; border: 0; box-shadow: none; }
+.character-thumb::after { content: none; }
+.search-strip { border-radius: 3px; background: #fff8e521; border: 1px solid #73532b3d; box-shadow: none; }
+.search-strip button { width: 44px; height: 44px; min-width: 44px; border-radius: 50%; font-size: 25px; line-height: 1; }
+.stage8-character-search input { min-width: 0; font-size: 16px; }
+.atlas-index .atlas-grid { display: grid; grid-template-columns: 1fr; gap: 6px; }
+.atlas-tile {
+  display: grid; grid-template-columns: 76px minmax(0, 1fr); grid-template-rows: auto auto;
+  column-gap: 13px; min-height: 88px; padding: 9px; text-align: left;
+  background: transparent; border: 1px solid #73532b32; border-radius: 3px !important;
+  clip-path: none !important; transform: none !important; box-shadow: none;
+}
+.atlas-tile::before, .atlas-tile::after { content: none !important; }
+.atlas-tile-image { position: relative; inset: auto; grid-row: 1 / 3; width: 76px !important; height: 70px !important; background: transparent !important; }
+.atlas-type { position: static; align-self: end; margin: 0; font-size: 12px; color: var(--ink-soft); text-shadow: none; }
+.atlas-tile strong { position: static; align-self: start; font-size: 21px; line-height: 1.1; text-shadow: none; }
+.stage8-atlas-svg { fill: none; stroke: currentColor; stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }
+.atlas-hero, .portrait-frame, .entry-hero { border: 0 !important; box-shadow: none !important; border-radius: 1px !important; clip-path: none !important; background: transparent !important; }
+.atlas-hero::before, .atlas-hero::after, .portrait-frame::before, .portrait-frame::after, .entry-hero::before, .entry-hero::after { content: none !important; }
+.portrait-frame { height: 240px; }
+.art-image { display: block; width: 100%; height: 100%; object-fit: cover; mix-blend-mode: multiply; }
+.portrait-art { display: block; width: 100%; height: 100%; background-image: url('./assets/portraits.webp'); background-size: 500% 100%; background-position: var(--portrait-position) center; mix-blend-mode: multiply; }
+.portrait-frame .portrait-image { width: 160px; height: 100%; margin: auto; }
+.entry-hero-image { filter: saturate(.55) sepia(.14); }
+.entry-hero figcaption { position: static; width: auto; padding: 9px 2px 2px; background: transparent; box-shadow: none; transform: none; font-size: 16px; }
+.margin-note { border: 1px solid #80633d26; background: #ceb78b38; box-shadow: 1px 3px 5px #5736131c; border-radius: 0; }
+.writing-toolbar { background: #eee5d188 !important; border: 1px solid #83654038 !important; border-radius: 5px !important; box-shadow: 0 2px 7px #61482e12 !important; backdrop-filter: blur(12px); }
+.writing-toolbar button { min-width: 36px; min-height: 40px; border-radius: 3px; }
+.add-day, .stage4-add-atlas { min-height: 44px; border: 1px solid #73532b45; border-radius: 3px; box-shadow: none; background: transparent; font-size: 16px; }
+.character-card .handwritten, .atlas-card .atlas-script { background: transparent; border: 0; box-shadow: none; padding: 8px 0; transform: none; }
+.linked-note { border: 0; border-bottom: 1px solid #73532b26; background: transparent; border-radius: 0; }
+.tag-row span { border-radius: 3px; transform: none; background: #a9844824; }
+.entry-back-inline, .stage2-inline-back, .stage3-inline-back, .stage4-inline-back { display: none !important; }
+.page-navigation { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 12px; margin-top: 20px; border-top: 1px solid #73532b40; }
+.page-navigation button { min-width: 44px; min-height: 44px; border: 0; background: transparent; cursor: pointer; }
+.page-navigation [data-page-step] { font-size: 30px; }
+.page-navigation [data-journal-back] { font-size: 16px; }
+.page-navigation span { margin-left: 12px; color: #79664f; font-size: 14px; }
+.page-navigation button:disabled { opacity: .28; cursor: default; }
+.page-navigation button:focus-visible { outline: 2px solid #70502a; }
+.character-card > h2, .atlas-card > h2, .character-card > .entry-date, .atlas-card > .entry-date { max-width: 100%; }
+@media (min-width: 761px) {
+  .book-shell { min-width: 0; max-height: none; height: min(850px, calc(100dvh - 150px)); min-height: 600px; }
+  .book-spread > section, .book-spread > article { overflow-y: auto; scrollbar-width: thin; scrollbar-color: #9c8057 transparent; }
+  .page-navigation [data-journal-back] { pointer-events: none; }
+}
+@media (max-width: 760px) {
+  .scene { padding: max(45px, calc(env(safe-area-inset-top) + 36px)) 9px 16px !important; }
+  .book-shell { width: 100% !important; margin: 0 !important; }
+  .book-cover { inset: -5px; border-radius: 5px; }
+  .bookmark-tabs { position: sticky; top: 0; left: auto !important; right: auto !important; margin: -33px 5px -1px; gap: 5px !important; padding-top: 0; }
+  .bookmark-tab, .bookmark-tab.is-active { min-height: 44px; height: 44px; padding: 6px 5px; font-size: 16px !important; }
+  .book-spread { min-height: calc(100dvh - 64px) !important; }
+  .book-spread > section, .book-spread > article,
+  .book-shell.show-detail .entry-page, .book-shell.show-detail .character-card, .book-shell.show-detail .atlas-card {
+    padding: 23px 18px 20px !important; min-height: calc(100dvh - 64px) !important;
+    overflow: visible; background-size: 100% 100% !important;
+  }
+  .campaign-heading h1, .placeholder-header h1 { font-size: 28px; }
+  .placeholder-header > .kicker, .placeholder-header > p:last-child { display: none; }
+  .character-index .placeholder-header { margin-bottom: 10px; }
+  .day-row { grid-template-columns: 59px minmax(0, 1fr) 14px; gap: 10px; min-height: 78px; }
+  .day-thumb { width: 59px; height: 61px; }
+  .day-copy strong { font-size: 18px; }
+  .character-row { grid-template-columns: 54px minmax(0, 1fr) 14px; min-height: 77px; }
+  .character-row strong { font-size: 21px; }
+  .character-thumb { width: 54px !important; height: 60px !important; }
+  .atlas-index .atlas-grid { grid-template-columns: 1fr; gap: 7px; }
+  .atlas-tile { min-height: 91px; }
+  .entry-header h2, .character-card h2, .atlas-card h2 { font-size: 28px !important; }
+  .entry-header { padding-right: 62px; }
+  .entry-title-block { width: 100%; max-width: none; }
+  .stage3-edit-character, .stage4-edit-atlas { top: 12px; right: 12px; min-height: 44px; }
+  .character-card > .kicker, .atlas-card > .kicker { margin-bottom: 16px; }
+  .book-shell.show-detail .page-navigation { position: relative; margin: 0 0 16px; padding: 0 0 6px; border-top: 0; border-bottom: 1px solid #73532b35; }
+  .book-spread > article { display: flex; flex-direction: column; }
+  .book-shell.show-detail .book-spread > article { display: flex; }
+  .page-navigation { order: -1; }
+  .atlas-card > p:not(.kicker):not(.entry-date):not(.handwritten) { max-width: 100%; }
+  .writing-toolbar button { min-width: 40px; min-height: 44px; }
+  .entry-body { display: block; }
+  .margin-note { margin: 18px 0 0 auto; width: 75%; }
+}

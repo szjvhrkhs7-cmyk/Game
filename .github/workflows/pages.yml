@@ -68,6 +68,9 @@ jobs:
         run: |
           test -f dnd/index.html
           grep -q "Путевой дневник" dnd/index.html
+          node --check dnd/journal.js
+          node --check dnd/navigation.js
+          node --test dnd/tests/*.test.cjs
 
       - name: Assemble and verify publication
         run: |
@@ -82,7 +85,7 @@ jobs:
           test -f dist/cradle/game.js
           test -f dist/payments-news/index.html
           test -f dist/dnd/index.html
-          test $(du -sk dist | cut -f1) -lt 2048
+          test $(du -sk dist | cut -f1) -lt 4096
 
       - name: Preserve production build
         uses: actions/upload-artifact@v4

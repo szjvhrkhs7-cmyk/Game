@@ -1,0 +1,4 @@
+// Build-time chroma key and atlas packing. Input is generated artwork, never source photos.
+const sharp = require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES + '/sharp');
+const path = require('node:path');
+(async()=>{const src=process.argv[2], dest=process.argv[3];const {data,info}=await sharp(src).ensureAlpha().raw().toBuffer({resolveWithObject:true});for(let i=0;i<data.length;i+=4){const r=data[i],g=data[i+1],b=data[i+2];if(r>145&&b>115&&g<Math.min(r,b)*0.65)data[i+3]=0;}const clean=sharp(data,{raw:info});await clean.clone().resize(768,512).webp({quality:86}).toFile(path.join(dest,'heroes.webp'));for(let row=0;row<2;row++)await clean.clone().extract({left:0,top:row*512,width:512,height:512}).resize(256,256).webp({quality:86}).toFile(path.join(dest,row?'valera.webp':'kolya.webp'));})();

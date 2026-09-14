@@ -72,6 +72,12 @@ jobs:
           node --check dnd/navigation.js
           node --test dnd/tests/*.test.cjs
 
+      - name: Build and test Last Raid
+        run: |
+          npm ci --prefix last-raid
+          npm test --prefix last-raid
+          RAID_QA=1 npm run build --prefix last-raid
+
       - name: Assemble and verify publication
         run: |
           cp -R payments-news dist/payments-news
@@ -86,6 +92,9 @@ jobs:
           test -f dist/payments-news/index.html
           test -f dist/dnd/index.html
           test $(du -sk dist | cut -f1) -lt 4096
+          cp -R last-raid/dist dist/last-raid
+          test -f dist/last-raid/index.html
+          test $(du -sk dist/last-raid | cut -f1) -lt 4096
 
       - name: Preserve production build
         uses: actions/upload-artifact@v4

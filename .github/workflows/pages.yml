@@ -82,6 +82,7 @@ jobs:
         run: |
           cp -R payments-news dist/payments-news
           cp -R dnd dist/dnd
+          cp -R last-route dist/last-route
           test -f dist/index.html
           test -f dist/src/game.js
           test -f dist/src/physics.js
@@ -91,6 +92,8 @@ jobs:
           test -f dist/cradle/game.js
           test -f dist/payments-news/index.html
           test -f dist/dnd/index.html
+          test -f dist/last-route/index.html
+          grep -q "Последний рейс" dist/last-route/index.html
           test $(du -sk dist | cut -f1) -lt 4096
           cp -R last-raid/dist dist/last-raid
           test -f dist/last-raid/index.html

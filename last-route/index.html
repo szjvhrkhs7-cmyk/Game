@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#070b12" />
+  <title>Последний рейс — Рязанский проспект</title>
+  <style>
+    :root{--bg:#070b12;--panel:rgba(8,14,24,.82);--line:rgba(255,255,255,.12);--muted:#9ca9ba;--text:#f4f7fb;--accent:#4aa3ff;--good:#63d48f;--warn:#ffca62;--danger:#ff6d74}
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Arial,sans-serif;touch-action:none}
+    #game{position:fixed;inset:0;width:100%;height:100%;display:block}
+    .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:22px;background:radial-gradient(circle at 50% 30%,rgba(34,55,84,.28),rgba(1,4,9,.88) 55%,#020409 100%);backdrop-filter:blur(6px);z-index:20}
+    .hidden{display:none!important}
+    .card{width:min(720px,100%);border:1px solid var(--line);background:linear-gradient(180deg,rgba(17,25,38,.94),rgba(8,13,22,.94));box-shadow:0 25px 80px rgba(0,0,0,.5);border-radius:26px;padding:28px}
+    .eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#7f92aa;margin-bottom:12px}
+    h1{font-size:clamp(38px,8vw,74px);line-height:.96;letter-spacing:-.05em;margin:0 0 18px;font-weight:800}
+    .lead{font-size:17px;line-height:1.55;color:#bdc6d3;max-width:600px;margin:0 0 24px}
+    .routeCard{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:18px;padding:15px 16px;margin:18px 0 22px}
+    .routeBadge{width:50px;height:50px;border-radius:14px;background:#1b79e8;display:grid;place-items:center;font-weight:800;font-size:20px;box-shadow:0 8px 25px rgba(27,121,232,.28)}
+    .routeTitle{font-weight:700}.routeSub{font-size:13px;color:var(--muted);margin-top:3px}.time{font-variant-numeric:tabular-nums;font-weight:700}
+    button{border:0;font:inherit;color:inherit;cursor:pointer}
+    .primary{width:100%;min-height:52px;border-radius:15px;background:linear-gradient(180deg,#5eb2ff,#2687ed);font-weight:800;box-shadow:0 12px 30px rgba(38,135,237,.26)}
+    .primary:disabled{opacity:.4;box-shadow:none;cursor:not-allowed}
+    .secondary{min-height:46px;border-radius:13px;padding:0 16px;background:rgba(255,255,255,.08);border:1px solid var(--line);font-weight:700}
+    .tips{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}.tip{padding:12px;border:1px solid var(--line);border-radius:14px;color:#aeb8c6;font-size:13px;background:rgba(255,255,255,.025)}.tip b{display:block;color:#eef3f8;margin-bottom:3px}
+    .checklist{display:grid;gap:10px;margin:20px 0}.check{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:14px 15px;border-radius:15px;background:rgba(255,255,255,.04);border:1px solid var(--line)}.dot{width:22px;height:22px;border-radius:50%;border:2px solid #6f7c8d;display:grid;place-items:center;font-size:13px}.check.done{border-color:rgba(99,212,143,.36);background:rgba(99,212,143,.07)}.check.done .dot{border-color:var(--good);background:var(--good);color:#07130b}
+    #hud{position:fixed;inset:0;pointer-events:none;z-index:5}
+    #topbar{position:absolute;top:max(14px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:min(760px,calc(100% - 24px));display:flex;gap:10px;justify-content:space-between;align-items:stretch}
+    .hudBox{border:1px solid rgba(255,255,255,.1);background:rgba(6,11,18,.70);backdrop-filter:blur(9px);border-radius:15px;padding:10px 13px;box-shadow:0 9px 24px rgba(0,0,0,.24)}
+    #nextStop{flex:1;min-width:0}.hudLabel{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#7f91a9;margin-bottom:4px}.hudValue{font-weight:760;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hudSub{font-size:12px;color:#9eadbf;margin-top:3px}.compact{min-width:90px;text-align:center}
+    #speedometer{position:absolute;left:18px;bottom:max(22px,calc(env(safe-area-inset-bottom) + 18px));width:142px;height:82px;border-radius:22px 22px 10px 10px;border:1px solid rgba(255,255,255,.11);background:linear-gradient(180deg,rgba(15,22,31,.84),rgba(5,9,15,.9));backdrop-filter:blur(8px);padding:10px 14px;box-shadow:0 16px 32px rgba(0,0,0,.28)}
+    .speed{display:flex;align-items:flex-end;gap:5px}.speed strong{font-size:38px;line-height:1;font-variant-numeric:tabular-nums}.speed span{font-size:11px;color:#93a0b0;margin-bottom:5px}.gear{font-size:11px;color:#9ba8b7;margin-top:5px}
+    #message{position:absolute;left:50%;bottom:120px;transform:translateX(-50%) translateY(16px);max-width:min(560px,calc(100% - 32px));padding:12px 15px;border-radius:15px;background:rgba(6,12,20,.86);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(10px);opacity:0;transition:.25s;box-shadow:0 16px 34px rgba(0,0,0,.35);text-align:center;font-size:14px;line-height:1.4}
+    #message.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    #interaction{position:absolute;right:18px;bottom:max(22px,calc(env(safe-area-inset-bottom) + 18px));display:flex;gap:8px;pointer-events:auto}
+    .action{min-width:96px;min-height:48px;border-radius:14px;background:rgba(8,14,22,.83);border:1px solid rgba(255,255,255,.15);backdrop-filter:blur(9px);font-weight:800;padding:0 13px}.action.primaryAction{background:rgba(33,129,231,.84)}
+    #pauseBtn{position:absolute;right:14px;top:max(86px,calc(env(safe-area-inset-top) + 82px));pointer-events:auto;width:42px;height:42px;border-radius:13px;background:rgba(8,14,22,.7);border:1px solid rgba(255,255,255,.11);backdrop-filter:blur(8px)}
+    #touch{position:fixed;inset:0;z-index:8;pointer-events:none;display:none}
+    .touchCluster{position:absolute;bottom:max(108px,calc(env(safe-area-inset-bottom) + 90px));display:flex;gap:10px;pointer-events:auto}.touchCluster.left{left:16px}.touchCluster.right{right:16px}
+    .touchBtn{width:68px;height:68px;border-radius:21px;background:rgba(8,14,22,.52);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(7px);font-size:24px;font-weight:800;display:grid;place-items:center;user-select:none}.touchBtn.pressed{background:rgba(57,143,236,.58);transform:scale(.97)}
+    .touchBtn.pedal{width:74px;height:82px;border-radius:22px;font-size:13px;letter-spacing:.06em}.touchBtn.brake{background:rgba(120,45,48,.46)}
+    #finish .score{font-size:48px;font-weight:850;letter-spacing:-.05em;margin:8px 0}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}.stat{padding:14px;border:1px solid var(--line);border-radius:15px;background:rgba(255,255,255,.035)}.stat b{display:block;font-size:24px;margin-top:5px}.stat span{color:#97a6b8;font-size:12px}
+    #loadError{position:fixed;inset:0;display:none;z-index:99;background:#05070b;color:white;padding:30px;align-items:center;justify-content:center;text-align:center}
+    @media(max-width:680px){.card{padding:22px;border-radius:22px}.tips{grid-template-columns:1fr}.compact:nth-last-child(1){display:none}#topbar{top:max(10px,env(safe-area-inset-top))}.hudBox{padding:9px 10px}.compact{min-width:72px}#speedometer{left:12px;bottom:max(16px,env(safe-area-inset-bottom));transform:scale(.9);transform-origin:left bottom}#interaction{right:12px;bottom:max(16px,env(safe-area-inset-bottom))}.action{min-width:84px;padding:0 10px}#touch{display:block}.stats{grid-template-columns:1fr 1fr}#message{bottom:205px}}
+    @media(pointer:fine){#touch{display:none!important}}
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <div id="loadError">Не удалось загрузить 3D-движок. Проверь подключение к интернету и обнови страницу.</div>
+
+  <section id="menu" class="overlay">
+    <div class="card">
+      <div class="eyebrow">Ночная Москва · игровой прототип</div>
+      <h1>Последний<br>рейс</h1>
+      <p class="lead">Ты выходишь на ночную смену на Рязанском проспекте. Довези пассажиров до конца участка, не сорви график и аккуратно отработай каждую остановку.</p>
+      <div class="routeCard">
+        <div class="routeBadge">Н7</div>
+        <div><div class="routeTitle">Рязанский проспект → Окская</div><div class="routeSub">6 остановок · ночь · дождь</div></div>
+        <div class="time">00:47</div>
+      </div>
+      <button class="primary" id="prepareBtn">Подготовиться к смене</button>
+      <div class="tips"><div class="tip"><b>W / ↑</b>газ</div><div class="tip"><b>S / ↓</b>тормоз / задний ход</div><div class="tip"><b>A D / ← →</b>руль</div></div>
+    </div>
+  </section>
+
+  <section id="prep" class="overlay hidden">
+    <div class="card">
+      <div class="eyebrow">Парк · 00:43</div>
+      <h2 style="font-size:32px;margin:0 0 8px">Подготовка к смене</h2>
+      <p class="lead" style="margin-bottom:14px">Быстрая проверка перед выездом. Нажми на каждый пункт.</p>
+      <div class="checklist">
+        <button class="check" data-check><span class="dot">✓</span><span><b>Свет и двери</b><br><small style="color:#91a0b1">фары, габариты, привод дверей</small></span></button>
+        <button class="check" data-check><span class="dot">✓</span><span><b>Тормозная система</b><br><small style="color:#91a0b1">давление и стояночный тормоз</small></span></button>
+        <button class="check" data-check><span class="dot">✓</span><span><b>Маршрут и связь</b><br><small style="color:#91a0b1">Н7, диспетчер на линии</small></span></button>
+      </div>
+      <button class="primary" id="startBtn" disabled>Выехать на линию</button>
+    </div>
+  </section>
+
+  <div id="hud" class="hidden">
+    <div id="topbar">
+      <div id="nextStop" class="hudBox"><div class="hudLabel">Следующая остановка</div><div class="hudValue" id="stopName">Метро «Рязанский проспект»</div><div class="hudSub" id="stopDistance">0 м</div></div>
+      <div class="hudBox compact"><div class="hudLabel">Пассажиры</div><div class="hudValue" id="passengers">0</div></div>
+      <div class="hudBox compact"><div class="hudLabel">График</div><div class="hudValue" id="schedule">+0:00</div></div>
+    </div>
+    <div id="speedometer"><div class="speed"><strong id="speed">0</strong><span>км/ч</span></div><div class="gear" id="gear">D · двери закрыты</div></div>
+    <div id="message"></div>
+    <div id="interaction"><button id="doorBtn" class="action">Двери · E</button><button id="hornBtn" class="action">Сигнал · H</button></div>
+    <button id="pauseBtn">Ⅱ</button>
+  </div>
+
+  <div id="touch" class="hidden">
+    <div class="touchCluster left"><button class="touchBtn" data-key="left">‹</button><button class="touchBtn" data-key="right">›</button></div>
+    <div class="touchCluster right"><button class="touchBtn pedal brake" data-key="brake">ТОРМОЗ</button><button class="touchBtn pedal" data-key="gas">ГАЗ</button></div>
+  </div>
+
+  <section id="pause" class="overlay hidden"><div class="card" style="max-width:470px"><div class="eyebrow">Смена приостановлена</div><h2 style="font-size:34px;margin:0 0 18px">Пауза</h2><button class="primary" id="resumeBtn">Продолжить</button></div></section>
+  <section id="finish" class="overlay hidden"><div class="card"><div class="eyebrow">Смена завершена</div><h2 style="font-size:34px;margin:0">Рейс принят</h2><div class="score" id="finalScore">92</div><div style="color:#9cabbc">оценка смены</div><div class="stats"><div class="stat"><span>Пассажиров</span><b id="finalPassengers">0</b></div><div class="stat"><span>Остановок</span><b>6 / 6</b></div><div class="stat"><span>Опоздание</span><b id="finalDelay">0:00</b></div></div><button class="primary" onclick="location.reload()">Еще один рейс</button></div></section>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+  <script>
+  (()=>{
+    if(!window.THREE){document.getElementById('loadError').style.display='flex';return;}
+    const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+    const canvas=$('#game'), renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
+    renderer.setPixelRatio(Math.min(devicePixelRatio,1.8)); renderer.setSize(innerWidth,innerHeight); renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+    renderer.outputEncoding=THREE.sRGBEncoding; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=.9;
+    const scene=new THREE.Scene(); scene.background=new THREE.Color(0x050912); scene.fog=new THREE.FogExp2(0x07101a,.0055);
+    const camera=new THREE.PerspectiveCamera(67,innerWidth/innerHeight,.08,2400);
+    const clock=new THREE.Clock();
+    scene.add(new THREE.HemisphereLight(0x6d86a7,0x11120e,.55));
+    const moon=new THREE.DirectionalLight(0x9fb8d9,.45); moon.position.set(-80,120,60); moon.castShadow=true; scene.add(moon);
+
+    // road + sidewalks
+    const roadMat=new THREE.MeshStandardMaterial({color:0x171a1e,roughness:.94,metalness:.04});
+    const road=new THREE.Mesh(new THREE.PlaneGeometry(34,2700),roadMat); road.rotation.x=-Math.PI/2; road.position.z=-1200; road.receiveShadow=true; scene.add(road);
+    const sidewalkMat=new THREE.MeshStandardMaterial({color:0x34383c,roughness:1});
+    [-21,21].forEach(x=>{const s=new THREE.Mesh(new THREE.BoxGeometry(8,.35,2700),sidewalkMat);s.position.set(x,.12,-1200);s.receiveShadow=true;scene.add(s)});
+    const grassMat=new THREE.MeshStandardMaterial({color:0x101915,roughness:1});
+    [-38,38].forEach(x=>{const g=new THREE.Mesh(new THREE.BoxGeometry(26,.1,2700),grassMat);g.position.set(x,-.08,-1200);scene.add(g)});
+    // lane markings
+    const markMat=new THREE.MeshBasicMaterial({color:0xc7c8bd});
+    for(let z=80;z>-2520;z-=28){for(const x of [-8.4,8.4]){const m=new THREE.Mesh(new THREE.PlaneGeometry(.16,12),markMat);m.rotation.x=-Math.PI/2;m.position.set(x,.012,z);scene.add(m)}}
+    const centerMat=new THREE.MeshBasicMaterial({color:0xc9b247});
+    for(let z=80;z>-2520;z-=20){const m=new THREE.Mesh(new THREE.PlaneGeometry(.12,8),centerMat);m.rotation.x=-Math.PI/2;m.position.set(0,.013,z);scene.add(m)}
+
+    // buildings
+    const buildingColors=[0x313741,0x29303a,0x3a3d42,0x252c34,0x443f3c];
+    const windowMat=new THREE.MeshBasicMaterial({color:0xd8b56e});
+    function building(x,z,w,h,d,c){const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color:c,roughness:.85,metalness:.03}));mesh.position.set(x,h/2,z);mesh.castShadow=true;mesh.receiveShadow=true;scene.add(mesh);
+      for(let yy=4;yy<h-2;yy+=4.4){for(let xx=-w/2+2.2;xx<w/2-1;xx+=4.2){if(Math.random()<.34){const win=new THREE.Mesh(new THREE.PlaneGeometry(1.05,1.5),windowMat);win.position.set(x+(x<0?w/2+.011:-w/2-.011),yy,z+xx*(d/w));win.rotation.y=x<0?Math.PI/2:-Math.PI/2;scene.add(win)}}}
+    }
+    for(let z=40;z>-2500;z-=72){const side=Math.floor(Math.abs(z)/72)%2?1:-1;for(const s of [side,-side]){const h=18+((Math.sin(z*.071+s)+1)*13);const w=22+((Math.cos(z*.041)+1)*6);building(s*(38+((Math.sin(z*.03)+1)*7)),z+(s*10),w,h,24,buildingColors[Math.abs(Math.floor(z/72+s*3))%buildingColors.length]);}}
+    // recognizable roadside blocks/signage
+    function sign(text,x,z,color='#1e77dd'){const c=document.createElement('canvas');c.width=512;c.height=128;const ctx=c.getContext('2d');ctx.fillStyle=color;ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle='#fff';ctx.font='700 42px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,c.width/2,c.height/2);const tex=new THREE.CanvasTexture(c);tex.encoding=THREE.sRGBEncoding;const m=new THREE.Mesh(new THREE.PlaneGeometry(9,2.25),new THREE.MeshBasicMaterial({map:tex,transparent:true}));m.position.set(x,5,z);m.rotation.y=x<0?Math.PI/2:-Math.PI/2;scene.add(m)}
+    sign('РЯЗАНСКИЙ ПРОСПЕКТ',-31,-180); sign('ОКСКАЯ',31,-1290,'#8a42d8');
+
+    // streetlights
+    const poleMat=new THREE.MeshStandardMaterial({color:0x1d232a,roughness:.65,metalness:.6});
+    for(let z=80;z>-2520;z-=78){for(const x of [-18,18]){const pole=new THREE.Mesh(new THREE.CylinderGeometry(.09,.12,8,8),poleMat);pole.position.set(x,4,z);scene.add(pole);const lamp=new THREE.PointLight(0xffd9a0,2.0,28,2);lamp.position.set(x,8,z);scene.add(lamp);const bulb=new THREE.Mesh(new THREE.SphereGeometry(.16,8,8),new THREE.MeshBasicMaterial({color:0xffdfaa}));bulb.position.copy(lamp.position);scene.add(bulb)}}
+
+    // bus stops
+    const stops=[
+      {name:'Метро «Рязанский проспект»',z:-260,x:-13,board:7},
+      {name:'Улица Академика Скрябина',z:-600,x:-13,board:3},
+      {name:'Театр Чихачева',z:-940,x:-13,board:5},
+      {name:'Метро «Окская»',z:-1280,x:-13,board:6},
+      {name:'Окская улица, 42',z:-1620,x:-13,board:2},
+      {name:'НИЦ «Строительство»',z:-1970,x:-13,board:4}
+    ];
+    const stopMeshes=[];
+    stops.forEach((s,i)=>{const grp=new THREE.Group();const pole=new THREE.Mesh(new THREE.CylinderGeometry(.06,.08,3.1,8),poleMat);pole.position.y=1.55;grp.add(pole);const plate=new THREE.Mesh(new THREE.BoxGeometry(.7,.8,.08),new THREE.MeshStandardMaterial({color:0x1e70c8,emissive:0x082542,emissiveIntensity:.8}));plate.position.set(0,2.75,0);grp.add(plate);const shelter=new THREE.Mesh(new THREE.BoxGeometry(4,2.7,.15),new THREE.MeshPhysicalMaterial({color:0x7fa1b4,transparent:true,opacity:.22,roughness:.25,metalness:.25}));shelter.position.set(2.2,1.35,1.3);grp.add(shelter);grp.position.set(s.x,0,s.z);scene.add(grp);stopMeshes.push(grp)});
+
+    // trees
+    const trunkMat=new THREE.MeshStandardMaterial({color:0x35271f,roughness:1}), leafMat=new THREE.MeshStandardMaterial({color:0x10261a,roughness:1});
+    for(let z=0;z>-2400;z-=55){for(const x of [-27,27]){if(Math.random()<.7){const t=new THREE.Mesh(new THREE.CylinderGeometry(.17,.25,3,7),trunkMat);t.position.set(x,1.5,z+Math.random()*25);scene.add(t);const crown=new THREE.Mesh(new THREE.SphereGeometry(1.5,8,7),leafMat);crown.position.set(t.position.x,3.8,t.position.z);scene.add(crown)}}}
+
+    // bus + cockpit
+    const bus=new THREE.Group(); scene.add(bus); bus.position.set(-5.2,.02,40);
+    const cabin=new THREE.Group(); bus.add(cabin);
+    camera.position.set(0,2.55,-1.5); cabin.add(camera);
+    const dark=new THREE.MeshStandardMaterial({color:0x0c0f13,roughness:.65,metalness:.25});
+    const dash=new THREE.Mesh(new THREE.BoxGeometry(3.9,.55,1.0),dark);dash.position.set(0,1.85,-2.55);dash.rotation.x=-.05;cabin.add(dash);
+    const leftPillar=new THREE.Mesh(new THREE.BoxGeometry(.18,3.2,.18),dark);leftPillar.position.set(-1.85,2.55,-2.6);cabin.add(leftPillar);const rightPillar=leftPillar.clone();rightPillar.position.x=1.85;cabin.add(rightPillar);
+    const roof=new THREE.Mesh(new THREE.BoxGeometry(4,.18,2.2),dark);roof.position.set(0,4.12,-2.1);cabin.add(roof);
+    const wheel=new THREE.Mesh(new THREE.TorusGeometry(.42,.055,12,28),new THREE.MeshStandardMaterial({color:0x111317,roughness:.5}));wheel.position.set(-.65,2.05,-2.02);wheel.rotation.x=Math.PI/2.7;cabin.add(wheel);
+    const wheelHub=new THREE.Mesh(new THREE.CylinderGeometry(.1,.1,.12,12),dark);wheelHub.position.set(-.65,2.05,-2.02);wheelHub.rotation.x=Math.PI/2.7;cabin.add(wheelHub);
+    const displayCanvas=document.createElement('canvas');displayCanvas.width=400;displayCanvas.height=150;const displayCtx=displayCanvas.getContext('2d');const displayTex=new THREE.CanvasTexture(displayCanvas);const display=new THREE.Mesh(new THREE.PlaneGeometry(1.25,.47),new THREE.MeshBasicMaterial({map:displayTex}));display.position.set(.48,2.1,-2.04);display.rotation.x=-.16;cabin.add(display);
+    // windshield rain lines (physical-ish points around bus)
+    const rainGeo=new THREE.BufferGeometry(), rainCount=650, rainPos=new Float32Array(rainCount*3);
+    for(let i=0;i<rainCount;i++){rainPos[i*3]=(Math.random()-.5)*55;rainPos[i*3+1]=Math.random()*24;rainPos[i*3+2]=(Math.random()-.5)*70-10}rainGeo.setAttribute('position',new THREE.BufferAttribute(rainPos,3));
+    const rain=new THREE.Points(rainGeo,new THREE.PointsMaterial({color:0xaac7de,size:.055,transparent:true,opacity:.55}));bus.add(rain);
+    // headlights
+    for(const x of [-1.35,1.35]){const hl=new THREE.SpotLight(0xe6f3ff,5.6,85,.34,.45,1.7);hl.position.set(x,1.05,-3);hl.target.position.set(x,0,-45);bus.add(hl);bus.add(hl.target)}
+
+    // moving cars
+    const cars=[]; const carMat=[0x283d5f,0x5b2427,0x303136,0x6b6745,0x263d36];
+    for(let i=0;i<9;i++){const g=new THREE.Group();const body=new THREE.Mesh(new THREE.BoxGeometry(1.8,.8,4.1),new THREE.MeshStandardMaterial({color:carMat[i%carMat.length],roughness:.55,metalness:.3}));body.position.y=.7;g.add(body);const w=new THREE.Mesh(new THREE.BoxGeometry(1.55,.55,1.65),new THREE.MeshStandardMaterial({color:0x17202a,roughness:.2,metalness:.4}));w.position.set(0,1.25,-.25);g.add(w);const tail=new THREE.PointLight(0xff2b2b,.8,7,2);tail.position.set(0,1.0,2.05);g.add(tail);g.position.set(5.5,0,-250-i*260);g.userData.speed=10+Math.random()*5;scene.add(g);cars.push(g)}
+
+    // game state
+    const keys={gas:false,brake:false,left:false,right:false}; let playing=false,paused=false,doors=false,boarding=false,finished=false; let speed=0,heading=0,steer=0,next=0,passengers=0,delay=0,score=100,elapsed=0,lastStopTime=0;
+    const routeTargetTimes=[25,65,105,145,185,225];
+    const messages=[
+      'Диспетчер: Н7, доброй смены. Держи график, дорога мокрая.',
+      'Пассажир: «Спасибо, что ночью ходите. Я бы иначе домой не добрался».',
+      'Диспетчер: впереди спокойно. На Окской задержка не больше минуты.',
+      'У остановки кто-то придерживает дверь для пожилого пассажира.',
+      'Радио тихо сообщает о ночном дожде над юго-востоком Москвы.'
+    ];
+    function msg(t,ms=4200){const el=$('#message');el.textContent=t;el.classList.add('show');clearTimeout(msg.t);msg.t=setTimeout(()=>el.classList.remove('show'),ms)}
+    function setDoors(v){if(Math.abs(speed)>0.35&&v){msg('Сначала полностью останови автобус.');return;}doors=v;$('#gear').textContent=(speed<-.5?'R':'D')+' · двери '+(doors?'открыты':'закрыты');$('#doorBtn').classList.toggle('primaryAction',doors); if(doors) tryBoard();}
+    function tryBoard(){if(next>=stops.length||boarding)return;const s=stops[next],d=Math.hypot(bus.position.x-s.x,bus.position.z-s.z);if(d<20&&Math.abs(speed)<.6){boarding=true;msg('Посадка пассажиров…',2200);setTimeout(()=>{passengers+=s.board;$('#passengers').textContent=passengers;const lateness=Math.max(0,elapsed-routeTargetTimes[next]);delay+=lateness;score-=Math.min(6,Math.floor(lateness/12));msg(next===2?messages[1]:`Остановка принята. +${s.board} пассажиров`,2600);next++;boarding=false;lastStopTime=elapsed;if(next>=stops.length){setTimeout(endGame,1800)}},1700)}else{msg('Открой двери у обозначенной остановки.')}}
+    function endGame(){finished=true;playing=false;speed=0;$('#hud').classList.add('hidden');$('#touch').classList.add('hidden');$('#finalPassengers').textContent=passengers;$('#finalScore').textContent=Math.max(55,Math.round(score));const m=Math.floor(delay/60),s=Math.floor(delay%60);$('#finalDelay').textContent=`${m}:${String(s).padStart(2,'0')}`;$('#finish').classList.remove('hidden')}
+    function start(){playing=true;$('#prep').classList.add('hidden');$('#hud').classList.remove('hidden');$('#touch').classList.remove('hidden');msg(messages[0],5200)}
+    $('#prepareBtn').onclick=()=>{$('#menu').classList.add('hidden');$('#prep').classList.remove('hidden')};
+    $$('[data-check]').forEach(b=>b.onclick=()=>{b.classList.toggle('done');$('#startBtn').disabled=$$('[data-check].done').length<3}); $('#startBtn').onclick=start;
+    $('#doorBtn').onclick=()=>setDoors(!doors); $('#hornBtn').onclick=()=>{beep(185,.13,.15);msg('Короткий сигнал. Ночной город отвечает эхом.',1500)};
+    $('#pauseBtn').onclick=()=>{if(!playing)return;paused=true;$('#pause').classList.remove('hidden')}; $('#resumeBtn').onclick=()=>{paused=false;$('#pause').classList.add('hidden');clock.getDelta()};
+    addEventListener('keydown',e=>{if(e.repeat&&e.code==='KeyE')return; if(e.code==='KeyW'||e.code==='ArrowUp')keys.gas=true;if(e.code==='KeyS'||e.code==='ArrowDown')keys.brake=true;if(e.code==='KeyA'||e.code==='ArrowLeft')keys.left=true;if(e.code==='KeyD'||e.code==='ArrowRight')keys.right=true;if(e.code==='KeyE')setDoors(!doors);if(e.code==='KeyH')$('#hornBtn').click();if(e.code==='Escape'&&playing)$('#pauseBtn').click()});
+    addEventListener('keyup',e=>{if(e.code==='KeyW'||e.code==='ArrowUp')keys.gas=false;if(e.code==='KeyS'||e.code==='ArrowDown')keys.brake=false;if(e.code==='KeyA'||e.code==='ArrowLeft')keys.left=false;if(e.code==='KeyD'||e.code==='ArrowRight')keys.right=false});
+    $$('[data-key]').forEach(b=>{const k=b.dataset.key;const down=e=>{e.preventDefault();keys[k]=true;b.classList.add('pressed')},up=e=>{e.preventDefault();keys[k]=false;b.classList.remove('pressed')};b.addEventListener('pointerdown',down);b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up);b.addEventListener('pointerleave',up)});
+
+    // lightweight procedural sound
+    let ac=null,osc=null,gain=null;function ensureAudio(){if(ac)return;ac=new (window.AudioContext||window.webkitAudioContext)();osc=ac.createOscillator();gain=ac.createGain();osc.type='sawtooth';gain.gain.value=.014;osc.frequency.value=45;osc.connect(gain).connect(ac.destination);osc.start()}
+    function beep(freq,dur,vol=.08){ensureAudio();const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=freq;g.gain.value=vol;o.connect(g).connect(ac.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+dur);o.stop(ac.currentTime+dur)}
+    addEventListener('pointerdown',ensureAudio,{once:true});
+
+    function updateHud(){const km=Math.round(Math.abs(speed)*3.6);$('#speed').textContent=km;$('#gear').textContent=(speed<-.5?'R':'D')+' · двери '+(doors?'открыты':'закрыты');if(next<stops.length){const s=stops[next],d=Math.max(0,Math.hypot(bus.position.x-s.x,bus.position.z-s.z));$('#stopName').textContent=s.name;$('#stopDistance').textContent=d>999?(d/1000).toFixed(1)+' км':Math.round(d)+' м'+(d<22?' · остановись и открой двери':'');} const ahead=Math.round(routeTargetTimes[Math.min(next,routeTargetTimes.length-1)]-elapsed);$('#schedule').textContent=ahead>=0?`−${Math.floor(ahead/60)}:${String(Math.abs(ahead%60)).padStart(2,'0')}`:`+${Math.floor(-ahead/60)}:${String(Math.abs(ahead%60)).padStart(2,'0')}`;
+      displayCtx.fillStyle='#07121d';displayCtx.fillRect(0,0,400,150);displayCtx.fillStyle='#62d4ff';displayCtx.font='700 64px Arial';displayCtx.fillText(String(km).padStart(2,'0'),18,76);displayCtx.font='24px Arial';displayCtx.fillStyle='#b7cee0';displayCtx.fillText('км/ч',112,76);displayCtx.fillStyle=doors?'#63d48f':'#8293a7';displayCtx.font='600 22px Arial';displayCtx.fillText(doors?'ДВЕРИ ОТКРЫТЫ':'МАРШРУТ Н7',18,122);displayTex.needsUpdate=true;
+    }
+    function updateRain(dt){const p=rainGeo.attributes.position.array;for(let i=0;i<rainCount;i++){p[i*3+1]-=20*dt;p[i*3+2]+=6*dt;if(p[i*3+1]<0){p[i*3+1]=20+Math.random()*7;p[i*3]=(Math.random()-.5)*55;p[i*3+2]=(Math.random()-.5)*70-10}}rainGeo.attributes.position.needsUpdate=true}
+    function updateCars(dt){cars.forEach(c=>{c.position.z+=c.userData.speed*dt;if(c.position.z>bus.position.z+180)c.position.z=bus.position.z-1200-Math.random()*900})}
+    function physics(dt){if(!playing||paused||finished)return;elapsed+=dt;const maxF=15.5,maxR=-3.3;if(doors){speed*=Math.max(0,1-dt*5)}else{if(keys.gas)speed+=4.2*dt;if(keys.brake){if(speed>0)speed-=8.4*dt;else speed-=2.5*dt}if(!keys.gas&&!keys.brake)speed*=Math.max(0,1-dt*.32)}speed=Math.max(maxR,Math.min(maxF,speed));if(Math.abs(speed)<.02)speed=0;
+      const targetSteer=(keys.left?1:0)+(keys.right?-1:0);steer+=((targetSteer)-steer)*Math.min(1,dt*5);heading+=steer*speed*.018*dt;heading*=Math.max(.985,1-dt*.02);const f=new THREE.Vector3(Math.sin(heading),0,-Math.cos(heading));bus.position.addScaledVector(f,speed*dt);bus.rotation.y=-heading;wheel.rotation.z=-steer*.75;
+      // soft road edges + safety score
+      if(Math.abs(bus.position.x)>13){speed*=Math.max(.93,1-dt*.8);score-=dt*.7;bus.position.x=Math.max(-16,Math.min(16,bus.position.x))}
+      if(next<stops.length){const s=stops[next],dist=Math.hypot(bus.position.x-s.x,bus.position.z-s.z);if(dist<22&&Math.abs(speed)>5.2)score-=dt*.25}
+      if(gain){osc.frequency.value=45+Math.abs(speed)*4.2;gain.gain.value=.009+Math.abs(speed)*.0013}
+    }
+    let storyFlags=new Set();function events(){if(!playing||paused)return;if(next===1&&!storyFlags.has(1)&&bus.position.z<-430){storyFlags.add(1);msg(messages[4],4000)}if(next===3&&!storyFlags.has(3)&&bus.position.z<-1080){storyFlags.add(3);msg(messages[2],4300)}if(next===5&&!storyFlags.has(5)&&bus.position.z<-1730){storyFlags.add(5);msg(messages[3],4300)}}
+    function animate(){requestAnimationFrame(animate);const dt=Math.min(.035,clock.getDelta());physics(dt);updateRain(dt);updateCars(dt);events();updateHud();renderer.render(scene,camera)}animate();
+    addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.8))});
+  })();
+  </script>
+</body>
+</html>
